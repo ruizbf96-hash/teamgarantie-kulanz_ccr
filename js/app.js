@@ -23,10 +23,10 @@ var KULANZ_BY_BRAND = {
     {name:'tpi',             label:"Y a-t-il une TPI ?",                                              nok:'NON', info:"TPI manquante"},
     {name:'opteven',         label:"Garantie OPTEVEN visible dans ELSA ?",                            nok:null},
     {name:'tuning',          label:"Code tuning dans SAGA ?",                                         nok:'OUI', info:"Code tuning détecté → NOK"},
-    {name:'piece_usure',     label:"La pièce concernée est une pièce d'usure ?",       nok:'OUI', info:"Pièce d'usure non couverte"},
-    {name:'piece_entretien', label:"La pièce concernée est liée à l'entretien ?", nok:null},
+    {name:'piece_usure',     label:"La pièce concernée est une pièce d'usure ?",                      nok:'OUI', info:"Pièce d'usure non couverte"},
+    {name:'piece_entretien', label:"La pièce concernée est liée à l'entretien ?",                     nok:null},
     {name:'preconisations',  label:"Les préconisations constructeur pour les entretiens sont toutes respectées ?", nok:'NON', info:"Préconisations non respectées"},
-    {name:'dernier_entretien',label:"Le dernier entretien est-il présent ?",                     nok:'NON', info:"Dernier entretien manquant"},
+    {name:'dernier_entretien',label:"Le dernier entretien est-il présent ?",                          nok:'NON', info:"Dernier entretien manquant"},
     {name:'vendu_client',    label:"Si non, est-il vendu au client et réalisé en même temps que la réparation ?", nok:null},
     {name:'lien_entretien',  label:"Un lien peut être établi entre la cause du dommage et l'entretien ?", nok:'OUI', info:"Lien dommage/entretien détecté"}
   ],
@@ -34,10 +34,10 @@ var KULANZ_BY_BRAND = {
     {name:'tpi',             label:"Y a-t-il une TPI ?",                                              nok:'NON', info:"TPI manquante"},
     {name:'opteven',         label:"Garantie OPTEVEN visible dans ELSA ?",                            nok:null},
     {name:'tuning',          label:"Code tuning dans SAGA ?",                                         nok:'OUI', info:"Code tuning détecté → NOK"},
-    {name:'piece_usure',     label:"La pièce concernée est une pièce d'usure ?",       nok:'OUI', info:"Pièce d'usure non couverte"},
-    {name:'piece_entretien', label:"La pièce concernée est liée à l'entretien ?", nok:null},
+    {name:'piece_usure',     label:"La pièce concernée est une pièce d'usure ?",                      nok:'OUI', info:"Pièce d'usure non couverte"},
+    {name:'piece_entretien', label:"La pièce concernée est liée à l'entretien ?",                     nok:null},
     {name:'preconisations',  label:"Les préconisations constructeur pour les entretiens sont toutes respectées ?", nok:'NON', info:"Préconisations non respectées"},
-    {name:'dernier_entretien_audi',label:"Le dernier entretien a été fait chez Audi ?",    nok:'NON', info:"Entretien non réalisé chez Audi"},
+    {name:'dernier_entretien_audi',label:"Le dernier entretien a été fait chez Audi ?",               nok:'NON', info:"Entretien non réalisé chez Audi"},
     {name:'vendu_client',    label:"Si non, est-il vendu au client et réalisé en même temps que la réparation ?", nok:null},
     {name:'lien_entretien',  label:"Un lien peut être établi entre la cause du dommage et l'entretien ?", nok:'OUI', info:"Lien dommage/entretien détecté"}
   ],
@@ -45,10 +45,10 @@ var KULANZ_BY_BRAND = {
     {name:'tpi',             label:"Y a-t-il une TPI ?",                                              nok:'NON', info:"TPI manquante"},
     {name:'opteven',         label:"Garantie OPTEVEN visible dans ELSA ?",                            nok:null},
     {name:'tuning',          label:"Code tuning dans SAGA ?",                                         nok:'OUI', info:"Code tuning détecté → NOK"},
-    {name:'piece_usure',     label:"La pièce concernée est une pièce d'usure ?",       nok:'OUI', info:"Pièce d'usure non couverte"},
-    {name:'piece_entretien', label:"La pièce concernée est liée à l'entretien ?", nok:null},
+    {name:'piece_usure',     label:"La pièce concernée est une pièce d'usure ?",                      nok:'OUI', info:"Pièce d'usure non couverte"},
+    {name:'piece_entretien', label:"La pièce concernée est liée à l'entretien ?",                     nok:null},
     {name:'preconisations',  label:"Les préconisations constructeur pour les entretiens sont toutes respectées ?", nok:'NON', info:"Préconisations non respectées"},
-    {name:'dernier_entretien',label:"Le dernier entretien est-il présent ?",                     nok:'NON', info:"Dernier entretien manquant"},
+    {name:'dernier_entretien',label:"Le dernier entretien est-il présent ?",                          nok:'NON', info:"Dernier entretien manquant"},
     {name:'vendu_client',    label:"Si non, est-il vendu au client et réalisé en même temps que la réparation ?", nok:null},
     {name:'lien_entretien',  label:"Un lien peut être établi entre la cause du dommage et l'entretien ?", nok:'OUI', info:"Lien dommage/entretien détecté"}
   ],
@@ -56,8 +56,8 @@ var KULANZ_BY_BRAND = {
     {name:'tpi',             label:"Y a-t-il une TPI ?",                                              nok:'NON', info:"TPI manquante"},
     {name:'opteven',         label:"Garantie OPTEVEN visible dans ELSA ?",                            nok:null},
     {name:'tuning',          label:"Code tuning dans SAGA ?",                                         nok:'OUI', info:"Code tuning détecté → NOK"},
-    {name:'piece_usure',     label:"La pièce concernée est une pièce d'usure ?",       nok:'OUI', info:"Pièce d'usure non couverte"},
-    {name:'piece_entretien', label:"La pièce concernée est liée à l'entretien ?", nok:null},
+    {name:'piece_usure',     label:"La pièce concernée est une pièce d'usure ?",                      nok:'OUI', info:"Pièce d'usure non couverte"},
+    {name:'piece_entretien', label:"La pièce concernée est liée à l'entretien ?",                     nok:null},
     {name:'preconisations',  label:"Tous les entretiens ont été réalisés en respectant les préconisations du constructeur (Km/durée) ? (Aucun entretien n'est à faire)", nok:'NON', info:"Préconisations non respectées"},
     {name:'entretien_moment',label:"Un entretien est-il à faire au moment de la réparation ? (Échéance non dépassée)", nok:null},
     {name:'vendu_client',    label:"Si oui, est-il vendu au client et réalisé en même temps que la réparation ?", nok:null},
@@ -66,7 +66,6 @@ var KULANZ_BY_BRAND = {
     {name:'lien_entretien',  label:"Un lien peut être établi entre la cause du dommage et l'entretien ?", nok:'OUI', info:"Lien dommage/entretien détecté"}
   ]
 };
-
 
 // \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
 // ÉTAT GLOBAL
