@@ -161,6 +161,7 @@ function ouvrirApp() {
     ge('h-site-name').textContent = G.site;
     ge('f-site').value = G.site;
     ge('site-display').value = G.site;
+    renderKulanzForm(G.site);
     ge('site-field').style.display = 'flex';
     ge('kvps').value = KVPS_MAP[G.site] || '';
     ge('kvps').readOnly = true;
@@ -212,6 +213,7 @@ function selectSite(btn, name) {
   var fsite = ge('f-site'); if(fsite) fsite.value = name;
   var hn = ge('h-site-name'); if(hn) hn.textContent = name || 'Tous les sites';
   var kvps = ge('kvps'); if(kvps && !kvps.readOnly) kvps.value = KVPS_MAP[name] || '';
+  renderKulanzForm(name);
 }
 
 function setType(t) {
@@ -225,7 +227,11 @@ function setType(t) {
     var ct = ge('cig-taux'); if (ct) { ct.value = ''; ct.disabled = true; }
   }
   ge('btn-k').classList.toggle('active', isK);
-  if (isK) { setTimeout(checkKulanzNok, 50); }
+  if (isK) {
+    var curSite = ge('f-site') ? ge('f-site').value : '';
+    if (curSite) renderKulanzForm(curSite);
+    setTimeout(checkKulanzNok, 50);
+  }
   ge('btn-c').classList.toggle('active', !isK);
   ge('f-type').value = isK ? 'Kulanz' : 'CCR';
   document.querySelectorAll('.k-section').forEach(function(el) { el.style.display = isK ? 'block' : 'none'; });
@@ -703,15 +709,13 @@ function collectData() {
     { l:'E-mail',           v:gv('email_usager') },
   ];
   if (type === 'Kulanz') {
-    fields = fields.concat([
-      { l:'TPI',                    v:gr('tpi') },
-      { l:'N° TPI',                 v:gv('num_tpi') },
-      { l:'Garantie OPTEVEN',       v:gr('opteven') },
-      { l:'Code tuning',            v:gr('tuning') },
-      { l:'Préconisations',         v:gr('preconisations') },
-      { l:'Dernier entretien OK',   v:gr('dernier_entretien') },
-      { l:'Lien dommage/entretien', v:gr('lien_entretien') },
-    ]);
+    var brand2 = SITE_BRAND[site] || 'VW';
+    var brandQs = KULANZ_BY_BRAND[brand2] || KULANZ_BY_BRAND['VW'];
+    var kFields = [{ l:'N° TPI', v:gv('num_tpi') }];
+    brandQs.forEach(function(q) {
+      kFields.push({ l:q.label, v:gr(q.name) });
+    });
+    fields = fields.concat(kFields);
   } else {
     var pcs = Array.from(document.querySelectorAll('[name="pieces[]"]:checked')).map(function(el) { return el.value; });
     fields = fields.concat([
@@ -1381,6 +1385,75 @@ function ssManualConfirm(key) {
   toast('✔ Code ' + raw.toUpperCase() + ' enregistré.');
 }
 
+
+// ═══════════════════════════════════════════════════════════
+// FORMULAIRE KULANZ DYNAMIQUE
+// ═══════════════════════════════════════════════════════════
+
+function toggleTpiField(show) {
+  var f = ge('tpi-num-field'); if(f) f.style.display = show ? 'flex' : 'none';
+}
+
+function renderKulanzForm(site) {
+  var zone = ge('kulanz-questions');
+  if (!zone) return;
+
+  // Déterminer la marque
+  var brand = SITE_BRAND[site] || 'VW';
+  var questions = KULANZ_BY_BRAND[brand] || KULANZ_BY_BRAND['VW'];
+
+  // Mettre à jour le titre
+  var title = ge('kulanz-title');
+  if (title) title.textContent = 'Vérifications KULANZ — ' + brand;
+
+  // Générer le HTML des questions
+  var html = '';
+  questions.forEach(function(q, i) {
+    var nokLabel = q.nok === 'OUI'
+      ? ' <small style="color:var(--red)">→ NOK</small>'
+      : q.nok === 'NON'
+        ? ' <small style="color:var(--red)">→ NOK</small>'
+        : '';
+
+    // Champ TPI numéro — conditionnel
+    var extraField = '';
+    if (q.name === 'tpi') {
+      html += '<div class="field"><label>' + q.label + '</label>'
+        + '<div class="radio-g">'
+        + '<label class="r-item"><input type="radio" name="tpi" value="OUI" onchange="checkKulanzNok();toggleTpiField(true)"> Oui</label>'
+        + '<label class="r-item"><input type="radio" name="tpi" value="NON" onchange="checkKulanzNok();toggleTpiField(false)">' + nokLabel + ' Non</label>'
+        + '</div></div>';
+      return;
+    }
+
+    // Questions avec déclencheur NOK
+    var triggerNok = (q.nok !== null)
+      ? ' onchange="checkKulanzNok()"'
+      : '';
+
+    var nokOui = q.nok === 'OUI' ? nokLabel : '';
+    var nokNon = q.nok === 'NON' ? nokLabel : '';
+
+    html += '<div class="field">'
+      + '<label>' + q.label + '</label>'
+      + '<div class="radio-g">'
+      + '<label class="r-item"><input type="radio" name="' + q.name + '" value="OUI"' + triggerNok + '> Oui' + nokOui + '</label>'
+      + '<label class="r-item"><input type="radio" name="' + q.name + '" value="NON"' + triggerNok + '> Non' + nokNon + '</label>'
+      + '</div></div>';
+
+    // Divider après opteven
+    if (q.name === 'opteven') {
+      html += '<div class="divider"></div>';
+    }
+  });
+
+  zone.innerHTML = html;
+
+  // Reset l'alerte NOK
+  var alertZone = ge('kulanz-nok-alert');
+  if (alertZone) { alertZone.classList.remove('show'); alertZone.innerHTML = ''; }
+}
+
 // ═══════════════════════════════════════════════════════════
 // KULANZ NOK — alerte + règles par marque
 // ═══════════════════════════════════════════════════════════
@@ -1417,45 +1490,36 @@ function checkKulanzNok() {
   var zone = ge('kulanz-nok-alert');
   if (!zone) return;
 
-  var tuning    = gr('tuning');
-  var dernEnt   = gr('dernier_entretien');
-  var lienEnt   = gr('lien_entretien');
+  var site   = ge('f-site') ? ge('f-site').value : '';
+  var brand  = SITE_BRAND[site] || 'VW';
+  var questions = KULANZ_BY_BRAND[brand] || KULANZ_BY_BRAND['VW'];
 
-  // Déterminer si NOK
-  var isNok = (tuning === 'OUI') || (dernEnt === 'NON') || (lienEnt === 'OUI');
+  // Collecter les réponses et détecter les NOK
+  var reasons = [];
+  questions.forEach(function(q) {
+    if (!q.nok) return;
+    var val = gr(q.name);
+    if (val === q.nok) {
+      reasons.push(q.info || q.label);
+    }
+  });
 
-  if (!isNok) {
+  if (!reasons.length) {
     zone.classList.remove('show');
     zone.innerHTML = '';
     return;
   }
 
-  // Construire le message
-  var reasons = [];
-  if (tuning === 'OUI')    reasons.push('Code tuning détecté dans SAGA/2 ou ODIS');
-  if (dernEnt === 'NON')   reasons.push('Dernier entretien non réalisé chez le site / non vendu lors de la réparation');
-  if (lienEnt === 'OUI')   reasons.push('Lien entre le dommage et l\'entretien (sauf si tous les entretiens sont conformes)');
+  // Règles par marque (textes popup)
+  var brandKey = brand.toLowerCase();
+  if (brandKey.indexOf('skoda') >= 0) brandKey = 'skoda';
+  else if (brandKey.indexOf('audi') >= 0) brandKey = 'audi';
+  else if (brandKey.indexOf('seat') >= 0) brandKey = 'seat';
+  else brandKey = 'vw';
 
-  // Règles par marque
-  var site = ge('f-site') ? ge('f-site').value : '';
-  // Normaliser le nom du site pour la map (enlever les caractères spéciaux)
-  var siteKey = site.replace(/\u0153/g,'oe').replace(/\u00e9/g,'e').replace(/\u00e8/g,'e').replace(/\u00ea/g,'e');
-  var brandKey = BRAND_RULES[site] || BRAND_RULES[siteKey] || null;
-  // Tentative par préfixe
-  if (!brandKey) {
-    var sl = site.toLowerCase();
-    if (sl.indexOf('audi') >= 0)  brandKey = 'audi';
-    else if (sl.indexOf('skoda') >= 0) brandKey = 'skoda';
-    else if (sl.indexOf('seat') >= 0)  brandKey = 'seat';
-    else if (sl.indexOf('vw') >= 0)    brandKey = 'vw';
-  }
-
-  var reasonsHtml = reasons.map(function(r) {
-    return '<p>' + esc(r) + '</p>';
-  }).join('');
-
+  var reasonsHtml = reasons.map(function(r) { return '<p>' + esc(r) + '</p>'; }).join('');
   var brandHtml = '';
-  if (brandKey && BRAND_TEXTS[brandKey]) {
+  if (BRAND_TEXTS && BRAND_TEXTS[brandKey]) {
     var b = BRAND_TEXTS[brandKey];
     brandHtml = '<div class="knok-brand">'
       + '<div class="knok-brand-title">' + b.title + '</div>'
@@ -1467,14 +1531,15 @@ function checkKulanzNok() {
     + '<div class="knok-title">⚠ Kulanz non applicable dans l\'état actuel</div>'
     + '<div class="knok-body">'
     + '<p>L\'application des participations commerciales nécessite le contrôle de tous les services et entretiens conformément aux préconisations du constructeur.</p>'
-    + '<p>Une participation commerciale peut être accordée avec un historique de service incomplet s\'il n\'y a pas de lien de causalité possible entre la réclamation client et le service manquant ou réalisé en retard. Le Réparateur Agréé doit vérifier toute connexion possible entre les deux.</p>'
-    + '<p><mark>Si un entretien est <strong>"à faire"</strong> au moment de la réclamation</mark>, la participation commerciale ne peut être proposée qu\'après l\'achèvement préalable de l\'entretien conformément aux préconisations constructeur.</p>'
-    + '<p>S\'il n\'est pas disponible dans Elsa, l\'historique complet d\'entretien du véhicule doit être demandé au client et intégré à l\'Information Qualité DISS.</p>'
+    + '<p>Une participation commerciale peut être accordée avec un historique de service incomplet s\'il n\'y a pas de lien de causalité possible entre la réclamation client et le service manquant ou réalisé en retard.</p>'
+    + '<p><mark>Si un entretien est <strong>"à faire"</strong> au moment de la réclamation</mark>, la participation commerciale ne peut être proposée qu\'après l\'achèvement préalable de l\'entretien.</p>'
     + '<div style="margin-top:10px;padding-top:10px;border-top:1px solid rgba(230,126,34,.3)">'
-    + '<strong style="font-size:11px;color:#c0392b">Motif(s) de non-éligibilité détecté(s) :</strong>'
+    + '<strong style="font-size:11px;color:#c0392b">Motif(s) de non-éligibilité :</strong>'
     + '<div style="margin-top:6px">' + reasonsHtml + '</div>'
+    + '</div>'
     + brandHtml
     + '</div></div>';
 
   zone.classList.add('show');
 }
+
