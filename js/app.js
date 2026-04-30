@@ -237,6 +237,7 @@ function ouvrirApp() {
     });
   }
 
+  enableAllDropdowns();
   initFirebase();
   startListener();
   restoreDraft();
@@ -316,75 +317,159 @@ var ssState = { dom: null, ava: null, desig: null, rub: null };
 
 function ssData(key) {
   if (key === 'ava') return CODES_AVA;
+
   if (key === 'rub') {
-    // Rubriques de la catégorie active
     var cat = ge('dom-cat') ? ge('dom-cat').value : '';
+    // Avec catégorie sélectionnée : filtrer — sinon : tout afficher
     var rubs = (cat && CAT_RUBS[cat]) ? CAT_RUBS[cat] : Object.keys(RUB_LABELS);
-    return rubs.map(function(r){return {code:r, label:r};});
+    return rubs.map(function(r){ return {code:r, label:r}; });
   }
+
   if (key === 'desig') {
-    // Désignations de la rubrique active
     var rubVal = ge('rub-val') ? ge('rub-val').value : '';
-    var labels = (rubVal && RUB_LABELS[rubVal]) ? RUB_LABELS[rubVal] : [];
-    return labels.map(function(l){return {code:l, label:l};});
+    // Avec rubrique : filtrer — sinon : tous les libellés uniques
+    var labels;
+    if (rubVal && RUB_LABELS[rubVal]) {
+      labels = RUB_LABELS[rubVal];
+    } else {
+      // Tous les libellés uniques de toutes les rubriques
+      var seen = {};
+      labels = [];
+      Object.values(RUB_LABELS).forEach(function(arr) {
+        arr.forEach(function(l) { if (!seen[l]) { seen[l] = true; labels.push(l); } });
+      });
+    }
+    return labels.map(function(l){ return {code:l, label:l}; });
   }
+
   if (key === 'dom') {
-    // Codes de la combinaison rubrique+désignation active
-    var rubVal2 = ge('rub-val') ? ge('rub-val').value : '';
+    var rubVal2  = ge('rub-val')   ? ge('rub-val').value   : '';
     var desigVal = ge('desig-val') ? ge('desig-val').value : '';
     if (rubVal2 && desigVal) {
       var k = rubVal2 + '|||' + desigVal;
       var codes = RUB_LABEL_CODES[k] || [];
-      return codes.map(function(c){return {code:c, label:desigVal};});
+      return codes.map(function(c){ return {code:c, label:desigVal}; });
     }
     if (desigVal) {
-      // Fallback: chercher dans toutes les rubriques
       var found = [];
-      Object.keys(RUB_LABEL_CODES).forEach(function(k2){
-        if(k2.split('|||')[1]===desigVal) found=found.concat(RUB_LABEL_CODES[k2]);
+      Object.keys(RUB_LABEL_CODES).forEach(function(k2) {
+        if (k2.split('|||')[1] === desigVal) found = found.concat(RUB_LABEL_CODES[k2]);
       });
-      return found.map(function(c){return {code:c, label:desigVal};});
+      return found.map(function(c){ return {code:c, label:desigVal}; });
     }
-    return [];
+    // Pas de désignation — liste tous les codes pour recherche libre
+    var allCodes = [];
+    var seenCodes = {};
+    Object.keys(RUB_LABEL_CODES).forEach(function(k3) {
+      var label3 = k3.split('|||')[1];
+      RUB_LABEL_CODES[k3].forEach(function(c) {
+        if (!seenCodes[c]) { seenCodes[c] = true; allCodes.push({code:c, label:label3}); }
+      });
+    });
+    // Trier par code numérique
+    allCodes.sort(function(a,b){ return parseInt(a.code) - parseInt(b.code); });
+    return allCodes;
   }
   return [];
 }
 
+
 function ssRender(key, query) {
   var items = ssData(key);
   var q = (query||'').toLowerCase().trim();
-  var filtered = q ? items.filter(function(it) {
-    return it.label.toLowerCase().indexOf(q) !== -1;
-  }) : items;
+  var filtered;
+  if (!q) {
+    filtered = items;
+  } else if (key === 'dom') {
+    // Recherche par code (commence par) OU par label (contient)
+    filtered = items.filter(function(it) {
+      return it.code.toLowerCase().indexOf(q) === 0 ||
+             it.label.toLowerCase().indexOf(q) !== -1;
+    });
+  } else {
+    filtered = items.filter(function(it) {
+      return it.label.toLowerCase().indexOf(q) !== -1;
+    });
+  }
   var shown = filtered.slice(0, 200);
   var cnt = ge('ss-'+key+'-cnt');
-  if (cnt) cnt.textContent = filtered.length + ' résultat' + (filtered.length!==1?'s':'') + (filtered.length>200?' — 200 affichés':'');
+  if (cnt) cnt.textContent = filtered.length + ' r\u00e9sultat' + (filtered.length!==1?'s':'') + (filtered.length>200?' \u2014 200 affich\u00e9s':'');
   var opts = ge('ss-'+key+'-opts');
   if (!opts) return;
-  if (!shown.length) { opts.innerHTML = '<div class="ss-empty">Aucun résultat</div>'; return; }
+  if (!shown.length) { opts.innerHTML = '<div class="ss-empty">Aucun r\u00e9sultat</div>'; return; }
   var cur = ssState[key] ? ssState[key].code : '';
   opts.innerHTML = shown.map(function(it) {
     var sel = it.code === cur ? ' sel' : '';
     var display;
     if (key === 'dom') {
-      // Code seulement
-      display = '<span class="ss-code" style="font-size:13px;font-weight:700">' + esc(it.code) + '</span>';
+      display = '<span class="ss-code" style="font-size:13px;font-weight:700">' + esc(it.code) + '</span>'
+              + '<span class="ss-lbl" style="color:#888;font-size:11px;margin-left:8px">' + esc(it.label) + '</span>';
     } else if (key === 'ava') {
-      // Code + label
       display = '<span class="ss-code">' + esc(it.code) + '</span><span class="ss-lbl">' + esc(it.label) + '</span>';
     } else {
-      // rub, desig: label seulement
       display = '<span class="ss-lbl">' + esc(it.label) + '</span>';
     }
     return '<div class="ss-opt'+sel+'" data-code="'+esc(it.code)+'" data-label="'+esc(it.label)+'" data-key="'+key+'" onclick="ssPickFromEl(this)">'+display+'</div>';
   }).join('');
 }
 
+
 function ssPickFromEl(el) {
   var code  = el.getAttribute('data-code');
   var label = el.getAttribute('data-label');
   var key   = el.getAttribute('data-key');
   ssPick(key, code, label);
+}
+
+
+function fillCascadeFromCode(code, desigLabel) {
+  // Trouver la rubrique et la catégorie pour ce code
+  var foundRub = '', foundCat = '';
+  Object.keys(RUB_LABEL_CODES).forEach(function(k) {
+    if (RUB_LABEL_CODES[k].indexOf(code) !== -1) {
+      var parts = k.split('|||');
+      if (!foundRub) { foundRub = parts[0]; }
+    }
+  });
+  if (foundRub) {
+    Object.keys(CAT_RUBS).forEach(function(cat) {
+      if (CAT_RUBS[cat].indexOf(foundRub) !== -1) foundCat = cat;
+    });
+  }
+
+  // Remplir désignation si pas déjà remplie manuellement
+  if (desigLabel) {
+    var dv = ge('desig-val');
+    if (dv && !dv.dataset.manual) {
+      dv.value = desigLabel;
+      ssState['desig'] = {code:desigLabel, label:desigLabel};
+      var dBtn = ge('ss-desig-btn');
+      if (dBtn) { dBtn.classList.add('filled'); dBtn.disabled = false;
+        var dt = dBtn.querySelector('.ss-txt'); if(dt) dt.textContent = desigLabel; }
+      var dh = ge('ss-desig-hint');
+      if(dh){dh.textContent='✔ '+desigLabel;dh.className='hint ok';}
+    }
+  }
+
+  // Remplir rubrique
+  if (foundRub) {
+    var rv = ge('rub-val'); if(rv) rv.value = foundRub;
+    ssState['rub'] = {code:foundRub, label:foundRub};
+    var rBtn = ge('ss-rub-btn');
+    if(rBtn){rBtn.classList.add('filled');rBtn.disabled=false;
+      var rt=rBtn.querySelector('.ss-txt');if(rt)rt.textContent=foundRub;}
+    var rh=ge('ss-rub-hint');if(rh){rh.textContent='✔ '+foundRub;rh.className='hint ok';}
+  }
+
+  // Remplir catégorie
+  if (foundCat) {
+    var ci = ge('dom-cat'); if(ci) ci.value = foundCat;
+    document.querySelectorAll('.cat-btn').forEach(function(b){
+      b.classList.toggle('active', b.getAttribute('data-cat') === foundCat);
+    });
+    var ch = ge('cat-hint');
+    if(ch){ch.textContent='✔ '+foundCat;ch.className='hint ok';}
+  }
 }
 
 function ssPick(key, code, label) {
@@ -436,10 +521,9 @@ function ssPick(key, code, label) {
     if (codes.length===1) { setTimeout(function(){ ssPick('dom',codes[0],cleanLabel); },50); }
 
   } else if (key === 'dom') {
-    // Code seulement dans le bouton
     if (txt) txt.textContent = code;
     if (hint) { hint.textContent = '✔ ' + code; hint.className = 'hint ok'; }
-
+    fillCascadeFromCode(code, cleanLabel);
   } else if (key === 'ava') {
     if (txt) txt.textContent = code + ' — ' + cleanLabel;
     if (hint) { hint.textContent = '✔ ' + cleanLabel; hint.className = 'hint ok'; }
@@ -1466,6 +1550,21 @@ function toggleTpiField(show) {
 }
 
 
+
+function toggleVenduClient(val) {
+  var w = ge('vendu-wrapper');
+  if (!w) return;
+  if (val === 'NON') {
+    w.style.display = 'block';
+  } else {
+    w.style.display = 'none';
+    // Reset les radios vendu_client
+    var radios = document.querySelectorAll('[name="vendu_client"]');
+    radios.forEach(function(r){ r.checked = false; });
+    hideVenduAlert();
+  }
+}
+
 function showVenduAlert() {
   var el = ge('vendu-alert');
   if (!el) return;
@@ -1496,6 +1595,31 @@ function hideVenduAlert() {
   if (el) { el.style.display = 'none'; el.innerHTML = ''; }
 }
 
+
+function enableAllDropdowns() {
+  // Activer rubrique (liste complète)
+  var rubBtn = ge('ss-rub-btn');
+  if (rubBtn) {
+    rubBtn.disabled = false;
+    var rt = rubBtn.querySelector('.ss-txt');
+    if (rt) rt.textContent = '🔍 Rechercher une rubrique…';
+  }
+  // Activer désignation (liste complète)
+  var desigBtn = ge('ss-desig-btn');
+  if (desigBtn) {
+    desigBtn.disabled = false;
+    var dt = desigBtn.querySelector('.ss-txt');
+    if (dt) dt.textContent = '🔍 Rechercher une désignation…';
+  }
+  // Activer code dommage (liste complète)
+  var domBtn = ge('ss-dom-btn');
+  if (domBtn) {
+    domBtn.disabled = false;
+    var dmt = domBtn.querySelector('.ss-txt');
+    if (dmt) dmt.textContent = '🔍 Rechercher par code ou libellé…';
+  }
+}
+
 function renderKulanzForm(site) {
   var zone = ge('kulanz-questions');
   if (!zone) return;
@@ -1503,14 +1627,13 @@ function renderKulanzForm(site) {
   var brand = SITE_BRAND[site] || 'VW';
   var questions = KULANZ_BY_BRAND[brand] || KULANZ_BY_BRAND['VW'];
 
-  // Titre avec marque
   var title = ge('kulanz-title');
-  if (title) title.textContent = 'Vérifications KULANZ \u2014 ' + brand;
+  if (title) title.textContent = 'V\u00e9rifications KULANZ \u2014 ' + brand;
 
   var html = '';
-  questions.forEach(function(q) {
+  questions.forEach(function(q, idx) {
 
-    // ── TPI : sans NOK sur les radios, champ num\u00e9ro en dessous si OUI ──
+    // ── TPI ──
     if (q.name === 'tpi') {
       html += '<div class="field">'
         + '<label>' + q.label + '</label>'
@@ -1527,17 +1650,14 @@ function renderKulanzForm(site) {
       return;
     }
 
-    // ── Divider apr\u00e8s opteven ──
-    var divider = '';
-
-    // ── Labels NOK ──
-    var nokOui = q.nok === 'OUI' ? ' <small style="color:var(--red)">\u2192 NOK</small>' : '';
-    var nokNon = q.nok === 'NON' ? ' <small style="color:var(--red)">\u2192 NOK</small>' : '';
-    var triggerNok = q.nok ? ' onchange="checkKulanzNok()"' : '';
-
-    // ── vendu_client : popup si NON ──
+    // ── vendu_client : conditionnel selon la question pr\u00e9c\u00e9dente ──
     if (q.name === 'vendu_client') {
-      html += '<div class="field">'
+      // Trouver la question pr\u00e9c\u00e9dente (dernier_entretien ou dernier_entretien_audi ou entretien_moment)
+      var prevQ = questions[idx - 1];
+      var prevName = prevQ ? prevQ.name : '';
+      var triggerId = 'vendu-wrapper';
+      html += '<div id="' + triggerId + '" style="display:none">'
+        + '<div class="field">'
         + '<label>' + q.label + '</label>'
         + '<div class="radio-g">'
         + '<label class="r-item"><input type="radio" name="vendu_client" value="OUI" onchange="checkKulanzNok();hideVenduAlert()"> Oui</label>'
@@ -1545,9 +1665,18 @@ function renderKulanzForm(site) {
         + '</div>'
         + '</div>'
         + '<div id="vendu-alert" style="display:none"></div>'
-        + divider;
+        + '</div>';
       return;
     }
+
+    var divider = '';
+    var nokOui = q.nok === 'OUI' ? ' <small style="color:var(--red)">\u2192 NOK</small>' : '';
+    var nokNon = q.nok === 'NON' ? ' <small style="color:var(--red)">\u2192 NOK</small>' : '';
+
+    // Questions dernier_entretien* : d\u00e9clenchent l'affichage de vendu_client si NON
+    var isDernierEntretien = (q.name === 'dernier_entretien' || q.name === 'dernier_entretien_audi' || q.name === 'entretien_moment');
+    var onchangeExtra = isDernierEntretien ? ';toggleVenduClient(this.value)' : '';
+    var triggerNok = q.nok ? ' onchange="checkKulanzNok()' + onchangeExtra + '"' : (isDernierEntretien ? ' onchange="toggleVenduClient(this.value)"' : '');
 
     html += '<div class="field">'
       + '<label>' + q.label + '</label>'
@@ -1561,10 +1690,10 @@ function renderKulanzForm(site) {
 
   zone.innerHTML = html;
 
-  // Reset alertes
   var alertZone = ge('kulanz-nok-alert');
   if (alertZone) { alertZone.classList.remove('show'); alertZone.innerHTML = ''; }
 }
+
 
 
 
@@ -1656,6 +1785,3 @@ function checkKulanzNok() {
 
   zone.classList.add('show');
 }
-
-
-
