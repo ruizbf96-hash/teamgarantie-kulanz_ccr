@@ -1519,15 +1519,16 @@ function renderKulanzForm(site) {
         + '<label class="r-item"><input type="radio" name="tpi" value="NON" onchange="checkKulanzNok();toggleTpiField(false)"> Non</label>'
         + '</div>'
         + '</div>'
-        + '<div id="tpi-num-field" class="field" style="display:none;margin-top:-8px;padding-left:4px">'
+        + '<div id="tpi-num-field" class="field" style="display:none;margin-top:8px">'
         + '<label>Num\u00e9ro de TPI</label>'
         + '<input type="text" name="num_tpi" placeholder="TPI-2025-0042">'
-        + '</div>';
+        + '</div>'
+        + '<div class="divider"></div>';
       return;
     }
 
     // ── Divider apr\u00e8s opteven ──
-    var divider = (q.name === 'opteven') ? '<div class="divider"></div>' : '';
+    var divider = '';
 
     // ── Labels NOK ──
     var nokOui = q.nok === 'OUI' ? ' <small style="color:var(--red)">\u2192 NOK</small>' : '';
@@ -1655,3 +1656,6 @@ function checkKulanzNok() {
 
   zone.classList.add('show');
 }
+
+
+
