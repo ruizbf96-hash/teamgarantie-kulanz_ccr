@@ -1655,3 +1655,4 @@ function checkKulanzNok() {
 
   zone.classList.add('show');
 }
+
