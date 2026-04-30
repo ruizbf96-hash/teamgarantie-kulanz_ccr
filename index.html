@@ -336,40 +336,15 @@
       </div>
     </div>
 
-    <!-- Section 3 KULANZ -->
+    <!-- Section 3 KULANZ — dynamique selon la marque -->
     <div class="f-section k-section">
-      <div class="f-head"><div class="f-num">3</div><div class="f-title">Vérifications KULANZ</div></div>
+      <div class="f-head"><div class="f-num">3</div><div class="f-title" id="kulanz-title">Vérifications KULANZ</div></div>
       <div class="f-body" style="display:flex;flex-direction:column;gap:14px">
-        <div class="field"><label>Y a-t-il une TPI ?</label>
-          <div class="radio-g"><label class="r-item"><input type="radio" name="tpi" value="OUI"> Oui</label><label class="r-item"><input type="radio" name="tpi" value="NON"> Non</label></div>
+        <div id="tpi-num-field" style="display:none" class="field">
+          <label>Numéro de TPI</label>
+          <input type="text" name="num_tpi" placeholder="TPI-2025-0042">
         </div>
-        <div class="field" id="tpi-num-field" style="display:none"><label>Numéro de TPI</label><input type="text" name="num_tpi" placeholder="TPI-2025-0042"></div>
-        <div class="divider"></div>
-        <div class="field"><label>Garantie OPTEVEN visible dans ELSA ?</label>
-          <div class="radio-g"><label class="r-item"><input type="radio" name="opteven" value="OUI"> Oui</label><label class="r-item"><input type="radio" name="opteven" value="NON"> Non</label></div>
-        </div>
-        <div class="field"><label>Code tuning dans SAGA/2 ou ODIS ?</label>
-          <div class="radio-g">
-            <label class="r-item"><input type="radio" name="tuning" value="OUI" onchange="checkKulanzNok()"> Oui <small style="color:var(--red)">→ NOK</small></label>
-            <label class="r-item"><input type="radio" name="tuning" value="NON" onchange="checkKulanzNok()"> Non</label>
-          </div>
-        </div>
-        <div class="field"><label>Préconisations constructeur respectées ?</label>
-          <div class="radio-g"><label class="r-item"><input type="radio" name="preconisations" value="OUI"> Oui</label><label class="r-item"><input type="radio" name="preconisations" value="NON"> Non</label></div>
-        </div>
-        <div class="field"><label>Dernier entretien chez le site ou vendu lors de la réparation ?</label>
-          <div class="radio-g">
-            <label class="r-item"><input type="radio" name="dernier_entretien" value="OUI" onchange="checkKulanzNok()"> Oui</label>
-            <label class="r-item"><input type="radio" name="dernier_entretien" value="NON" onchange="checkKulanzNok()"> Non <small style="color:var(--red)">→ NOK</small></label>
-          </div>
-        </div>
-        <div class="field"><label>Lien entre le dommage et l'entretien ?</label>
-          <div class="radio-g">
-            <label class="r-item"><input type="radio" name="lien_entretien" value="OUI" onchange="checkKulanzNok()"> Oui <small style="color:var(--red)">→ NOK sauf entretiens OK</small></label>
-            <label class="r-item"><input type="radio" name="lien_entretien" value="NON" onchange="checkKulanzNok()"> Non</label>
-          </div>
-        </div>
-        <!-- Zone alerte NOK + règles par marque -->
+        <div id="kulanz-questions"></div>
         <div id="kulanz-nok-alert"></div>
       </div>
     </div>
