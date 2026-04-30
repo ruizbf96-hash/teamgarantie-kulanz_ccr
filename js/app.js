@@ -5,6 +5,69 @@ var KVPS_MAP  = {'Audi Hœnheim':'02155','Audi Obernai':'02486','SEAT Hœnheim':
 var MOT_DE_PASSE = 'Garantie2026';
 var WEB3_KEY     = '7bf5b927-e39f-4fc1-9f60-642e4741e445';
 
+// ═══════════════════════════════════════════════════════════
+// VÉRIFICATIONS KULANZ PAR MARQUE
+// ═══════════════════════════════════════════════════════════
+var SITE_BRAND = {
+  'Audi Hœnheim': 'Audi',
+  'Audi Obernai':      'Audi',
+  'SEAT Hœnheim': 'SEAT',
+  'SKODA Hœnheim':'SKODA',
+  'VW Bischheim':      'VW',
+  'VW Illkirch':       'VW',
+  'VW Obernai':        'VW'
+};
+
+var KULANZ_BY_BRAND = {
+  'VW': [
+    {name:'tpi',             label:"Y a-t-il une TPI ?",                                              nok:'NON', info:"TPI manquante"},
+    {name:'opteven',         label:"Garantie OPTEVEN visible dans ELSA ?",                            nok:null},
+    {name:'tuning',          label:"Code tuning dans SAGA ?",                                         nok:'OUI', info:"Code tuning détecté → NOK"},
+    {name:'piece_usure',     label:"La pièce concernée est une pièce d'usure ?",       nok:'OUI', info:"Pièce d'usure non couverte"},
+    {name:'piece_entretien', label:"La pièce concernée est liée à l'entretien ?", nok:null},
+    {name:'preconisations',  label:"Les préconisations constructeur pour les entretiens sont toutes respectées ?", nok:'NON', info:"Préconisations non respectées"},
+    {name:'dernier_entretien',label:"Le dernier entretien est-il présent ?",                     nok:'NON', info:"Dernier entretien manquant"},
+    {name:'vendu_client',    label:"Si non, est-il vendu au client et réalisé en même temps que la réparation ?", nok:null},
+    {name:'lien_entretien',  label:"Un lien peut être établi entre la cause du dommage et l'entretien ?", nok:'OUI', info:"Lien dommage/entretien détecté"}
+  ],
+  'Audi': [
+    {name:'tpi',             label:"Y a-t-il une TPI ?",                                              nok:'NON', info:"TPI manquante"},
+    {name:'opteven',         label:"Garantie OPTEVEN visible dans ELSA ?",                            nok:null},
+    {name:'tuning',          label:"Code tuning dans SAGA ?",                                         nok:'OUI', info:"Code tuning détecté → NOK"},
+    {name:'piece_usure',     label:"La pièce concernée est une pièce d'usure ?",       nok:'OUI', info:"Pièce d'usure non couverte"},
+    {name:'piece_entretien', label:"La pièce concernée est liée à l'entretien ?", nok:null},
+    {name:'preconisations',  label:"Les préconisations constructeur pour les entretiens sont toutes respectées ?", nok:'NON', info:"Préconisations non respectées"},
+    {name:'dernier_entretien_audi',label:"Le dernier entretien a été fait chez Audi ?",    nok:'NON', info:"Entretien non réalisé chez Audi"},
+    {name:'vendu_client',    label:"Si non, est-il vendu au client et réalisé en même temps que la réparation ?", nok:null},
+    {name:'lien_entretien',  label:"Un lien peut être établi entre la cause du dommage et l'entretien ?", nok:'OUI', info:"Lien dommage/entretien détecté"}
+  ],
+  'SEAT': [
+    {name:'tpi',             label:"Y a-t-il une TPI ?",                                              nok:'NON', info:"TPI manquante"},
+    {name:'opteven',         label:"Garantie OPTEVEN visible dans ELSA ?",                            nok:null},
+    {name:'tuning',          label:"Code tuning dans SAGA ?",                                         nok:'OUI', info:"Code tuning détecté → NOK"},
+    {name:'piece_usure',     label:"La pièce concernée est une pièce d'usure ?",       nok:'OUI', info:"Pièce d'usure non couverte"},
+    {name:'piece_entretien', label:"La pièce concernée est liée à l'entretien ?", nok:null},
+    {name:'preconisations',  label:"Les préconisations constructeur pour les entretiens sont toutes respectées ?", nok:'NON', info:"Préconisations non respectées"},
+    {name:'dernier_entretien',label:"Le dernier entretien est-il présent ?",                     nok:'NON', info:"Dernier entretien manquant"},
+    {name:'vendu_client',    label:"Si non, est-il vendu au client et réalisé en même temps que la réparation ?", nok:null},
+    {name:'lien_entretien',  label:"Un lien peut être établi entre la cause du dommage et l'entretien ?", nok:'OUI', info:"Lien dommage/entretien détecté"}
+  ],
+  'SKODA': [
+    {name:'tpi',             label:"Y a-t-il une TPI ?",                                              nok:'NON', info:"TPI manquante"},
+    {name:'opteven',         label:"Garantie OPTEVEN visible dans ELSA ?",                            nok:null},
+    {name:'tuning',          label:"Code tuning dans SAGA ?",                                         nok:'OUI', info:"Code tuning détecté → NOK"},
+    {name:'piece_usure',     label:"La pièce concernée est une pièce d'usure ?",       nok:'OUI', info:"Pièce d'usure non couverte"},
+    {name:'piece_entretien', label:"La pièce concernée est liée à l'entretien ?", nok:null},
+    {name:'preconisations',  label:"Tous les entretiens ont été réalisés en respectant les préconisations du constructeur (Km/durée) ? (Aucun entretien n'est à faire)", nok:'NON', info:"Préconisations non respectées"},
+    {name:'entretien_moment',label:"Un entretien est-il à faire au moment de la réparation ? (Échéance non dépassée)", nok:null},
+    {name:'vendu_client',    label:"Si oui, est-il vendu au client et réalisé en même temps que la réparation ?", nok:null},
+    {name:'justificatifs',   label:"Disposez-vous des justificatifs des 2 derniers entretiens ? (Hors entretien fait au moment de la réparation)", nok:'NON', info:"Justificatifs manquants"},
+    {name:'justif_preco',    label:"Si oui, ont-ils été réalisés en respectant les préconisations constructeur ?", nok:'NON', info:"Préconisations non respectées sur les 2 derniers entretiens"},
+    {name:'lien_entretien',  label:"Un lien peut être établi entre la cause du dommage et l'entretien ?", nok:'OUI', info:"Lien dommage/entretien détecté"}
+  ]
+};
+
+
 // \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
 // ÉTAT GLOBAL
 // \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
@@ -155,6 +218,7 @@ function ouvrirApp() {
     ge('site-bar').style.display = 'none';
     ge('dash-wrap').classList.add('on');
     ge('h-site-name').textContent = 'Tous les sites';
+    renderKulanzForm('VW Bischheim'); // défaut VW pour TeamGarantie
   } else {
     ge('h-role').textContent = '👤 ' + G.site;
     ge('site-bar').style.display = 'none';
