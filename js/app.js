@@ -1465,65 +1465,107 @@ function toggleTpiField(show) {
   var f = ge('tpi-num-field'); if(f) f.style.display = show ? 'flex' : 'none';
 }
 
+
+function showVenduAlert() {
+  var el = ge('vendu-alert');
+  if (!el) return;
+  var site  = ge('f-site') ? ge('f-site').value : '';
+  var brand = SITE_BRAND[site] || 'VW';
+  var brandKey = brand.toLowerCase();
+  if (brandKey.indexOf('skoda') >= 0)      brandKey = 'skoda';
+  else if (brandKey.indexOf('audi') >= 0)  brandKey = 'audi';
+  else if (brandKey.indexOf('seat') >= 0)  brandKey = 'seat';
+  else                                      brandKey = 'vw';
+
+  var msgs = {
+    vw:    "Le dernier entretien doit être vendu au client ET réalisé en même temps que la réparation pour maintenir l'éligibilité Kulanz VW.",
+    audi:  "Le dernier entretien doit être vendu au client ET réalisé en même temps que la réparation. Il devra être réalisé chez Audi pour bénéficier des participations commerciales constructeur.",
+    seat:  "Le dernier entretien doit être vendu au client ET réalisé en même temps que la réparation. Il devra être réalisé chez SEAT ou CUPRA pour bénéficier des participations commerciales.",
+    skoda: "Le dernier entretien doit être vendu au client ET réalisé en même temps que la réparation selon les préconisations constructeur Skoda."
+  };
+  var msg = msgs[brandKey] || msgs.vw;
+
+  el.style.display = 'block';
+  el.innerHTML = '<div class="info-box" style="background:rgba(192,57,43,.07);border-color:rgba(192,57,43,.3);color:#8b1a1a;margin-top:4px">'
+    + '⚠️ <strong>Attention</strong> — ' + msg
+    + '</div>';
+}
+
+function hideVenduAlert() {
+  var el = ge('vendu-alert');
+  if (el) { el.style.display = 'none'; el.innerHTML = ''; }
+}
+
 function renderKulanzForm(site) {
   var zone = ge('kulanz-questions');
   if (!zone) return;
 
-  // Déterminer la marque
   var brand = SITE_BRAND[site] || 'VW';
   var questions = KULANZ_BY_BRAND[brand] || KULANZ_BY_BRAND['VW'];
 
-  // Mettre à jour le titre
+  // Titre avec marque
   var title = ge('kulanz-title');
-  if (title) title.textContent = 'Vérifications KULANZ — ' + brand;
+  if (title) title.textContent = 'Vérifications KULANZ \u2014 ' + brand;
 
-  // Générer le HTML des questions
   var html = '';
-  questions.forEach(function(q, i) {
-    var nokLabel = q.nok === 'OUI'
-      ? ' <small style="color:var(--red)">→ NOK</small>'
-      : q.nok === 'NON'
-        ? ' <small style="color:var(--red)">→ NOK</small>'
-        : '';
+  questions.forEach(function(q) {
 
-    // Champ TPI numéro — conditionnel
-    var extraField = '';
+    // ── TPI : sans NOK sur les radios, champ num\u00e9ro en dessous si OUI ──
     if (q.name === 'tpi') {
-      html += '<div class="field"><label>' + q.label + '</label>'
+      html += '<div class="field">'
+        + '<label>' + q.label + '</label>'
         + '<div class="radio-g">'
         + '<label class="r-item"><input type="radio" name="tpi" value="OUI" onchange="checkKulanzNok();toggleTpiField(true)"> Oui</label>'
-        + '<label class="r-item"><input type="radio" name="tpi" value="NON" onchange="checkKulanzNok();toggleTpiField(false)">' + nokLabel + ' Non</label>'
-        + '</div></div>';
+        + '<label class="r-item"><input type="radio" name="tpi" value="NON" onchange="checkKulanzNok();toggleTpiField(false)"> Non</label>'
+        + '</div>'
+        + '</div>'
+        + '<div id="tpi-num-field" class="field" style="display:none;margin-top:-8px;padding-left:4px">'
+        + '<label>Num\u00e9ro de TPI</label>'
+        + '<input type="text" name="num_tpi" placeholder="TPI-2025-0042">'
+        + '</div>';
       return;
     }
 
-    // Questions avec déclencheur NOK
-    var triggerNok = (q.nok !== null)
-      ? ' onchange="checkKulanzNok()"'
-      : '';
+    // ── Divider apr\u00e8s opteven ──
+    var divider = (q.name === 'opteven') ? '<div class="divider"></div>' : '';
 
-    var nokOui = q.nok === 'OUI' ? nokLabel : '';
-    var nokNon = q.nok === 'NON' ? nokLabel : '';
+    // ── Labels NOK ──
+    var nokOui = q.nok === 'OUI' ? ' <small style="color:var(--red)">\u2192 NOK</small>' : '';
+    var nokNon = q.nok === 'NON' ? ' <small style="color:var(--red)">\u2192 NOK</small>' : '';
+    var triggerNok = q.nok ? ' onchange="checkKulanzNok()"' : '';
+
+    // ── vendu_client : popup si NON ──
+    if (q.name === 'vendu_client') {
+      html += '<div class="field">'
+        + '<label>' + q.label + '</label>'
+        + '<div class="radio-g">'
+        + '<label class="r-item"><input type="radio" name="vendu_client" value="OUI" onchange="checkKulanzNok();hideVenduAlert()"> Oui</label>'
+        + '<label class="r-item"><input type="radio" name="vendu_client" value="NON" onchange="checkKulanzNok();showVenduAlert()"> Non</label>'
+        + '</div>'
+        + '</div>'
+        + '<div id="vendu-alert" style="display:none"></div>'
+        + divider;
+      return;
+    }
 
     html += '<div class="field">'
       + '<label>' + q.label + '</label>'
       + '<div class="radio-g">'
       + '<label class="r-item"><input type="radio" name="' + q.name + '" value="OUI"' + triggerNok + '> Oui' + nokOui + '</label>'
       + '<label class="r-item"><input type="radio" name="' + q.name + '" value="NON"' + triggerNok + '> Non' + nokNon + '</label>'
-      + '</div></div>';
-
-    // Divider après opteven
-    if (q.name === 'opteven') {
-      html += '<div class="divider"></div>';
-    }
+      + '</div>'
+      + '</div>'
+      + divider;
   });
 
   zone.innerHTML = html;
 
-  // Reset l'alerte NOK
+  // Reset alertes
   var alertZone = ge('kulanz-nok-alert');
   if (alertZone) { alertZone.classList.remove('show'); alertZone.innerHTML = ''; }
 }
+
+
 
 // ═══════════════════════════════════════════════════════════
 // KULANZ NOK — alerte + règles par marque
@@ -1613,3 +1655,4 @@ function checkKulanzNok() {
 
   zone.classList.add('show');
 }
+
