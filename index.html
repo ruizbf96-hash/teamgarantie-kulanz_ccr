@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Team Garantie GEA – VW</title>
+
+<!-- Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+
+<!-- Styles -->
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+
+<!-- ══ LOGIN PAGE ══ -->
+<div id="login-page">
+  <div class="lp-wrap">
+    <div>
+      <div class="lp-logo">Team Garantie <span>GEA – VW</span></div>
+      <div class="lp-sub">Gestion des demandes Garantie</div>
+    </div>
+    <div id="lp-step1" style="width:100%">
+      <div class="lp-cards">
+        <div class="lp-card" onclick="showStep2()">
+          <div class="lp-card-icon">👤</div>
+          <div class="lp-card-title">Usager</div>
+          <div class="lp-card-desc">Créer et suivre vos demandes Kulanz / CCR</div>
+        </div>
+        <div class="lp-card" onclick="openPwdModal()">
+          <div class="lp-card-icon">🔐</div>
+          <div class="lp-card-title">TeamGarantie</div>
+          <div class="lp-card-desc">Valider les demandes, accéder à l'historique complet</div>
+        </div>
+      </div>
+    </div>
+    <div id="lp-step2" style="display:none;width:100%">
+      <p style="color:var(--silver);font-size:13px;text-align:center;margin-bottom:14px">Sélectionnez votre site :</p>
+      <div class="lp-sites">
+        <div class="lp-site" onclick="loginUsager('Audi Hœnheim')">Audi Hœnheim</div>
+        <div class="lp-site" onclick="loginUsager('Audi Obernai')">Audi Obernai</div>
+        <div class="lp-site" onclick="loginUsager('SEAT Hœnheim')">SEAT Hœnheim</div>
+        <div class="lp-site" onclick="loginUsager('SKODA Hœnheim')">SKODA Hœnheim</div>
+        <div class="lp-site" onclick="loginUsager('VW Bischheim')">VW Bischheim</div>
+        <div class="lp-site" onclick="loginUsager('VW Illkirch')">VW Illkirch</div>
+        <div class="lp-site span2" onclick="loginUsager('VW Obernai')">VW Obernai</div>
+      </div>
+      <button class="lp-back" onclick="showStep1()">← Retour</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL MOT DE PASSE ══ -->
+<div id="pwd-modal">
+  <div class="pm-box">
+    <h3>🔐 Accès TeamGarantie</h3>
+    <p>Saisissez votre mot de passe pour accéder à l'espace de validation.</p>
+    <div class="field">
+      <label>Mot de passe</label>
+      <input type="password" id="pwd-input" placeholder="••••••••••••" onkeydown="if(event.key==='Enter')submitPwd()">
+      <div class="pm-error" id="pwd-error">Mot de passe incorrect.</div>
+    </div>
+    <button class="btn-std" style="width:100%;margin-top:14px;padding:12px" onclick="submitPwd()">Se connecter</button>
+    <button style="width:100%;margin-top:8px;background:none;border:1.5px solid #ddd;border-radius:7px;padding:11px;font-size:13px;color:#888;cursor:pointer" onclick="closePwdModal()">Annuler</button>
+  </div>
+</div>
+
+<!-- ══ SUCCESS OVERLAY ══ -->
+<div id="success-overlay">
+  <div class="success-card">
+    <div style="font-size:52px">✅</div>
+    <h2>Demande envoyée !</h2>
+    <p>Votre demande a été transmise à <strong>teamgarantie@geauto.fr</strong></p>
+    <div class="success-details" id="success-details"></div>
+    <p style="font-size:11px;color:#aaa">Vous recevrez une notification dès validation.</p>
+    <button class="btn-new" onclick="nouvelleDemande()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Nouvelle demande
+    </button>
+  </div>
+</div>
+
+<!-- ══ HEADER ══ -->
+<header>
+  <div class="h-top">
+    <div class="h-logo">Team Garantie GEA – VW</div>
+    <div class="h-right">
+      <div class="h-site-label">
+        <span>Site sélectionné</span>
+        <span id="h-site-name">—</span>
+      </div>
+      <div class="h-db">
+        <div class="h-db-dot" id="db-dot"></div>
+        <span class="h-db-txt">DB</span>
+      </div>
+      <div class="h-alert" id="h-alert">
+        <span class="h-alert-dot"></span>
+        <span id="h-alert-txt">En attente</span>
+      </div>
+      <div class="h-user" id="h-user">
+        <span class="h-role" id="h-role"></span>
+        <button class="btn-logout" onclick="deconnecter()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:11px;height:11px"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          Déconnexion
+        </button>
+      </div>
+    </div>
+  </div>
+  <div class="site-bar" id="site-bar" style="display:none">
+    <span class="site-bar-label">Sélectionner un site</span>
+    <button class="s-btn" onclick="selectSite(this,'Audi Hœnheim')">Audi Hœnheim</button>
+    <button class="s-btn" onclick="selectSite(this,'Audi Obernai')">Audi Obernai</button>
+    <button class="s-btn" onclick="selectSite(this,'SEAT Hœnheim')">SEAT Hœnheim</button>
+    <button class="s-btn" onclick="selectSite(this,'SKODA Hœnheim')">SKODA Hœnheim</button>
+    <button class="s-btn" onclick="selectSite(this,'VW Bischheim')">VW Bischheim</button>
+    <button class="s-btn" onclick="selectSite(this,'VW Illkirch')">VW Illkirch</button>
+    <button class="s-btn" onclick="selectSite(this,'VW Obernai')">VW Obernai</button>
+  </div>
+  <!-- Dashboard TeamGarantie -->
+  <div class="dash-wrap" id="dash-wrap">
+    <div class="dash-title">Vue d'ensemble — Demandes par site</div>
+    <div class="dash-grid" id="dash-grid"></div>
+  </div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" id="tab-form" onclick="showPage('form',this)">📝 Formulaire</button>
+    <button class="nav-tab" id="tab-histo" onclick="showPage('histo',this)" style="display:none">📋 Historique</button>
+  </div>
+  <div class="type-bar" id="type-bar">
+    <div class="type-toggle">
+      <button class="t-btn active" id="btn-k" onclick="setType('K')">Demande KULANZ</button>
+      <button class="t-btn" id="btn-c" onclick="setType('C')">Demande CCR</button>
+    </div>
+    <button id="btn-copy-kulanz" onclick="copyKulanz()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+      Copier les données depuis Kulanz
+    </button>
+  </div>
+</header>
+
+<!-- ══ PAGE FORMULAIRE ══ -->
+<div id="page-form" class="page active">
+<main>
+  <form id="mainForm" onsubmit="return false">
+    <input type="hidden" id="f-site" name="site">
+    <input type="hidden" id="f-type" name="type_demande" value="Kulanz">
+
+    <!-- Section 1: Véhicule -->
+    <div class="f-section">
+      <div class="f-head"><div class="f-num">1</div><div class="f-title">Identification du véhicule</div></div>
+      <div class="f-body">
+        <div class="grid2">
+          <div class="field ac-wrap">
+            <label>Numéro de châssis <span class="req">*</span></label>
+            <input type="text" id="chassis" name="chassis" placeholder="Ex : WAUZZZ8R3LA000000" maxlength="17" autocomplete="off" oninput="onChassis(this)">
+            <div class="ac-list" id="chassis-ac"></div>
+            <span class="hint" id="chassis-hint">0 / 17 caractères</span>
+          </div>
+          <div class="field">
+            <label>Kilométrage <span class="req">*</span></label>
+            <input type="number" name="kilometrage" placeholder="Ex : 45000" min="0">
+          </div>
+          <div class="field">
+            <label>N° Ordre de Réparation <span class="req">*</span></label>
+            <input type="text" id="or-num" name="or_number" placeholder="000123" maxlength="6" oninput="onOR(this)">
+            <span class="hint" id="or-hint">0 / 6 chiffres</span>
+          </div>
+          <div class="field">
+            <label>Date de l'OR <span class="req">*</span></label>
+            <input type="date" name="date_or">
+          </div>
+          <div class="field" id="site-field" style="display:none">
+            <label>Site</label>
+            <input type="text" id="site-display" readonly>
+          </div>
+          <div class="field">
+            <label>KVPS <span class="opt">(optionnel)</span></label>
+            <input type="text" id="kvps" name="kvps" placeholder="Ex : 02155">
+          </div>
+          <div class="field">
+            <label>Nom du demandeur <span class="req">*</span></label>
+            <input type="text" name="technicien" placeholder="Prénom Nom">
+          </div>
+          <div class="field col2">
+            <label>Votre e-mail <span class="req">*</span></label>
+            <input type="text" name="email_usager" placeholder="prenom.nom@geauto.fr">
+            <span class="hint">Confirmation et suivi de votre demande</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 2: Dommage -->
+    <div class="f-section">
+      <div class="f-head"><div class="f-num">2</div><div class="f-title">Nature du dommage</div></div>
+      <div class="f-body">
+        <div class="grid2">
+
+          <!-- Plainte client -->
+          <div class="field col2">
+            <label>Plainte du client <span class="req">*</span></label>
+            <textarea name="plainte_client" placeholder="LE CLIENT SIGNALE …"></textarea>
+          </div>
+
+          <!-- Catégorie -->
+          <div class="field col2 cat-select-wrap">
+            <label>Catégorie <span class="req">*</span></label>
+            <input type="hidden" id="dom-cat" name="categorie_dommage">
+            <div class="cat-btns" id="cat-btns">
+              <button type="button" class="cat-btn" data-cat="Ensemble motopropulseur" onclick="selectCat(this)">⚙ Motopropulseur</button>
+              <button type="button" class="cat-btn" data-cat="Transmission"            onclick="selectCat(this)">🔧 Transmission</button>
+              <button type="button" class="cat-btn" data-cat="Trains roulants"         onclick="selectCat(this)">🛞 Trains roulants</button>
+              <button type="button" class="cat-btn" data-cat="Carrosserie"             onclick="selectCat(this)">🚗 Carrosserie</button>
+              <button type="button" class="cat-btn" data-cat="Chauffage-Ventilation-Climatiseur" onclick="selectCat(this)">❄ Chauffage / Clim</button>
+              <button type="button" class="cat-btn" data-cat="Equipement electrique"  onclick="selectCat(this)">⚡ Équip. électrique</button>
+              <button type="button" class="cat-btn manual"                             onclick="selectCatManual()">✏ Saisie libre</button>
+            </div>
+            <div class="cat-manual-row" id="cat-manual-row">
+              <input class="cat-manual-inp" id="cat-manual-inp" placeholder="Saisir une catégorie libre…">
+              <button class="cat-manual-ok" onclick="catManualConfirm()">OK</button>
+              <button class="cat-reset"     onclick="resetCat()">✕</button>
+            </div>
+            <span class="hint" id="cat-hint"></span>
+          </div>
+
+          <!-- Désignation pièce — dropdown filtré + saisie manuelle -->
+          <div class="field col2">
+            <label>Rubrique <span class="req">*</span></label>
+            <input type="hidden" id="rub-val" name="rubrique_dommage">
+            <div class="ss-wrap" id="ss-rub">
+              <button type="button" class="ss-btn" id="ss-rub-btn" onclick="ssToggle('rub')" disabled>
+                <span class="ss-txt" id="ss-rub-txt">↑ Sélectionnez d’abord une catégorie…</span>
+                <span class="ss-arr">▼</span>
+              </button>
+              <div class="ss-drop" id="ss-rub-drop">
+                <div class="ss-search-row"><span>🔍</span><input class="ss-inp" id="ss-rub-inp" placeholder="Rubrique…" oninput="ssFilter('rub',this.value)"></div>
+                <div class="ss-meta"><span id="ss-rub-cnt"></span><button class="ss-clr" onclick="ssClear('rub')">✕ Effacer</button></div>
+                <div class="ss-opts" id="ss-rub-opts"></div>
+                <div class="ss-manual-row">
+                  <span>✏ Saisie manuelle :</span>
+                  <input class="ss-manual-inp" id="ss-rub-manual" placeholder="Ex : Moteur assemblé…">
+                  <button class="ss-manual-ok" onclick="ssManualConfirmRub()">OK</button>
+                </div>
+              </div>
+            </div>
+            <span class="hint" id="ss-rub-hint"></span>
+          </div>
+
+          <div class="field">
+            <label>Désignation pièce <span class="req">*</span></label>
+            <div class="ss-wrap" id="ss-desig">
+              <input type="hidden" id="desig-val" name="desig_piece">
+              <button type="button" class="ss-btn" id="ss-desig-btn" onclick="ssToggle('desig')" disabled>
+                <span class="ss-txt" id="ss-desig-txt">↑ Sélectionnez d’abord une rubrique…</span>
+                <span class="ss-arr">▼</span>
+              </button>
+              <div class="ss-drop" id="ss-desig-drop">
+                <div class="ss-search-row"><span>🔍</span><input class="ss-inp" id="ss-desig-inp" placeholder="Libéllé dommage…" oninput="ssFilter('desig',this.value)"></div>
+                <div class="ss-meta"><span id="ss-desig-cnt"></span><button class="ss-clr" onclick="ssClear('desig')">✕ Effacer</button></div>
+                <div class="ss-opts" id="ss-desig-opts"></div>
+                <div class="ss-manual-row">
+                  <span>✏ Saisie manuelle :</span>
+                  <input class="ss-manual-inp" id="ss-desig-manual" placeholder="Ex : Pompe à eau">
+                  <button class="ss-manual-ok" onclick="ssManualConfirmDesig()">OK</button>
+                </div>
+              </div>
+            </div>
+            <span class="hint" id="ss-desig-hint"></span>
+          </div>
+
+          <!-- Code dommage (même niveau que désignation) -->
+          <div class="field">
+            <label>Code dommage <span class="req">*</span></label>
+            <div class="ss-wrap" id="ss-dom">
+              <input type="hidden" id="dom-val" name="code_dommage">
+              <input type="hidden" id="dom-lbl" name="code_dommage_label">
+              <button type="button" class="ss-btn" id="ss-dom-btn" onclick="ssToggle('dom')" disabled>
+                <span class="ss-txt" id="ss-dom-txt">↑ Choisir désignation d’abord…</span>
+                <span class="ss-arr">▼</span>
+              </button>
+              <div class="ss-drop" id="ss-dom-drop">
+                <div class="ss-search-row"><span>🔍</span><input class="ss-inp" id="ss-dom-inp" placeholder="Code ou libéllé…" oninput="ssFilter('dom',this.value)"></div>
+                <div class="ss-meta"><span id="ss-dom-cnt"></span><button class="ss-clr" onclick="ssClear('dom')">✕ Effacer</button></div>
+                <div class="ss-opts" id="ss-dom-opts"></div>
+                <div class="ss-manual-row">
+                  <span>✏ Saisie manuelle :</span>
+                  <input class="ss-manual-inp" id="ss-dom-manual" placeholder="Ex: 1001 ou A01" oninput="ssManualInput('dom',this.value)">
+                  <button class="ss-manual-ok" onclick="ssManualConfirm('dom')">OK</button>
+                </div>
+              </div>
+            </div>
+            <span class="hint" id="ss-dom-hint"></span>
+          </div>
+          
+
+          <!-- Ligne : Code avarie | Emplacement -->
+          <div class="field">
+            <label>Code avarie <span class="req">*</span></label>
+            <div class="ss-wrap" id="ss-ava">
+              <input type="hidden" id="ava-val" name="code_avarie">
+              <input type="hidden" id="ava-lbl" name="code_avarie_label">
+              <button type="button" class="ss-btn" id="ss-ava-btn" onclick="ssToggle('ava')">
+                <span class="ss-txt" id="ss-ava-txt">🔍 Sélectionner un code avarie…</span>
+                <span class="ss-arr">▼</span>
+              </button>
+              <div class="ss-drop" id="ss-ava-drop">
+                <div class="ss-search-row"><span>🔍</span><input class="ss-inp" id="ss-ava-inp" placeholder="Code ou libéllé…" oninput="ssFilter('ava',this.value)"></div>
+                <div class="ss-meta"><span id="ss-ava-cnt"></span><button class="ss-clr" onclick="ssClear('ava')">✕ Effacer</button></div>
+                <div class="ss-opts" id="ss-ava-opts"></div>
+                <div class="ss-manual-row">
+                  <span>✏ Saisie manuelle :</span>
+                  <input class="ss-manual-inp" id="ss-ava-manual" placeholder="Ex: 0010" oninput="ssManualInput('ava',this.value)">
+                  <button class="ss-manual-ok" onclick="ssManualConfirm('ava')">OK</button>
+                </div>
+              </div>
+            </div>
+            <span class="hint" id="ss-ava-hint"></span>
+          </div>
+          <div class="field">
+            <label>Emplacement <span class="opt">(optionnel)</span></label>
+            <select name="emplacement">
+              <option value="">— Sélectionner —</option>
+              <option>Gauche</option><option>Droit</option><option>Avant</option><option>Arrière</option>
+              <option>Avant gauche</option><option>Avant droit</option><option>Arrière gauche</option><option>Arrière droit</option><option>Non applicable</option>
+            </select>
+          </div>
+
+          <!-- Référence pièce -->
+          <div class="field col2">
+            <label>Référence pièce <span class="opt">(optionnel)</span></label>
+            <input type="text" name="ref_piece" placeholder="Ex : 8V0 123 456 A">
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 3 KULANZ -->
+    <div class="f-section k-section">
+      <div class="f-head"><div class="f-num">3</div><div class="f-title">Vérifications KULANZ</div></div>
+      <div class="f-body" style="display:flex;flex-direction:column;gap:14px">
+        <div class="field"><label>Y a-t-il une TPI ?</label>
+          <div class="radio-g"><label class="r-item"><input type="radio" name="tpi" value="OUI"> Oui</label><label class="r-item"><input type="radio" name="tpi" value="NON"> Non</label></div>
+        </div>
+        <div class="field" id="tpi-num-field" style="display:none"><label>Numéro de TPI</label><input type="text" name="num_tpi" placeholder="TPI-2025-0042"></div>
+        <div class="divider"></div>
+        <div class="field"><label>Garantie OPTEVEN visible dans ELSA ?</label>
+          <div class="radio-g"><label class="r-item"><input type="radio" name="opteven" value="OUI"> Oui</label><label class="r-item"><input type="radio" name="opteven" value="NON"> Non</label></div>
+        </div>
+        <div class="field"><label>Code tuning dans SAGA/2 ou ODIS ?</label>
+          <div class="radio-g">
+            <label class="r-item"><input type="radio" name="tuning" value="OUI" onchange="checkKulanzNok()"> Oui <small style="color:var(--red)">→ NOK</small></label>
+            <label class="r-item"><input type="radio" name="tuning" value="NON" onchange="checkKulanzNok()"> Non</label>
+          </div>
+        </div>
+        <div class="field"><label>Préconisations constructeur respectées ?</label>
+          <div class="radio-g"><label class="r-item"><input type="radio" name="preconisations" value="OUI"> Oui</label><label class="r-item"><input type="radio" name="preconisations" value="NON"> Non</label></div>
+        </div>
+        <div class="field"><label>Dernier entretien chez le site ou vendu lors de la réparation ?</label>
+          <div class="radio-g">
+            <label class="r-item"><input type="radio" name="dernier_entretien" value="OUI" onchange="checkKulanzNok()"> Oui</label>
+            <label class="r-item"><input type="radio" name="dernier_entretien" value="NON" onchange="checkKulanzNok()"> Non <small style="color:var(--red)">→ NOK</small></label>
+          </div>
+        </div>
+        <div class="field"><label>Lien entre le dommage et l'entretien ?</label>
+          <div class="radio-g">
+            <label class="r-item"><input type="radio" name="lien_entretien" value="OUI" onchange="checkKulanzNok()"> Oui <small style="color:var(--red)">→ NOK sauf entretiens OK</small></label>
+            <label class="r-item"><input type="radio" name="lien_entretien" value="NON" onchange="checkKulanzNok()"> Non</label>
+          </div>
+        </div>
+        <!-- Zone alerte NOK + règles par marque -->
+        <div id="kulanz-nok-alert"></div>
+      </div>
+    </div>
+
+    <!-- Section 3 CCR - Prérequis -->
+    <div class="f-section c-section">
+      <div class="f-head"><div class="f-num">3</div><div class="f-title">Prérequis CCR</div></div>
+      <div class="f-body">
+        <div class="info-box">Une demande <strong>KULANZ</strong> doit avoir été effectuée avant toute demande CCR.</div>
+        <div class="field"><label>Demande KULANZ effectuée ?</label>
+          <div class="radio-g"><label class="r-item"><input type="radio" name="kulanz_done" value="OUI"> Oui – joindre la KULANZ</label><label class="r-item"><input type="radio" name="kulanz_done" value="NON"> Non – effectuer d'abord</label></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 4 CCR - Pièces -->
+    <div class="f-section c-section">
+      <div class="f-head"><div class="f-num">4</div><div class="f-title">Pièces à fournir</div></div>
+      <div class="f-body">
+        <div class="chk-list">
+          <label class="chk-item"><input type="checkbox" name="pieces[]" value="Devis au taux garantie"><span class="chk-item-txt"><strong>Devis au taux garantie</strong> – sans forfait, sans diagnostic</span></label>
+          <label class="chk-item"><input type="checkbox" name="pieces[]" value="Accord Technique Préalable"><span class="chk-item-txt"><strong>Accord Technique Préalable</strong> – si nécessaire</span></label>
+          <label class="chk-item"><input type="checkbox" name="pieces[]" value="Photo/vidéo avec châssis"><span class="chk-item-txt"><strong>Photo ou vidéo</strong> avec châssis visible (ServiceCam)</span></label>
+          <label class="chk-item"><input type="checkbox" name="pieces[]" value="Plan entretien ELSA"><span class="chk-item-txt"><strong>Plan d'entretien numérique ELSA</strong></span></label>
+          <label class="chk-item"><input type="checkbox" name="pieces[]" value="Factures entretien réseau"><span class="chk-item-txt"><strong>Factures d'entretien – réseau</strong></span></label>
+          <label class="chk-item"><input type="checkbox" name="pieces[]" value="Factures entretien hors réseau"><span class="chk-item-txt"><strong>Factures d'entretien – hors réseau</strong></span></label>
+          <label class="chk-item"><input type="checkbox" name="pieces[]" value="IQ avec plainte client"><span class="chk-item-txt"><strong>IQ</strong> avec plainte client et codage</span></label>
+          <label class="chk-item"><input type="checkbox" name="pieces[]" value="Feuille Commentaire Technicien"><span class="chk-item-txt"><strong>Feuille Commentaire Technicien</strong> avec diagnostic</span></label>
+          <label class="chk-item"><input type="checkbox" name="pieces[]" value="Protocole en ligne"><span class="chk-item-txt"><strong>Protocole en ligne</strong> avec plan de contrôle</span></label>
+          <label class="chk-item"><input type="checkbox" name="pieces[]" value="Contrôle codes garantie"><span class="chk-item-txt"><strong>Contrôle des codes de garantie</strong> (TD1, …)</span></label>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 5 CCR - CIG -->
+    <div class="f-section c-section">
+      <div class="f-head"><div class="f-num">5</div><div class="f-title">Règles CIG</div></div>
+      <div class="f-body">
+        <div class="info-box">Un CIG 70/30 de <strong>16 %</strong> est obligatoire.</div>
+        <div class="cig-box">
+          <div style="font-size:11px;font-weight:500;color:var(--gold);margin-bottom:10px;text-transform:uppercase">CIG appliqué</div>
+          <div class="radio-g" style="flex-direction:column;gap:9px">
+            <label class="r-item"><input type="radio" name="cig" value="standard_16"> CIG standard 16 %</label>
+            <label class="r-item" style="gap:10px"><input type="radio" name="cig" value="superieur"> CIG supérieur à 16 % →
+              <input type="number" id="cig-taux" name="cig_taux" placeholder="…%" min="0" max="100" step="0.5" style="width:80px;padding:5px 9px" disabled>
+            </label>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section commentaires -->
+    <div class="f-section">
+      <div class="f-head"><div class="f-num" id="comm-num">4</div><div class="f-title">Commentaires</div></div>
+      <div class="f-body">
+        <div class="field">
+          <label>Commentaires <span class="opt">(optionnel)</span></label>
+          <textarea name="commentaires" rows="4" placeholder="Toute information utile…"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <div class="submit-area">
+      <p class="submit-note">En soumettant, le formulaire sera envoyé à <strong>teamgarantie@geauto.fr</strong></p>
+      <div class="btn-row">
+        <button type="button" class="btn-primary" id="btn-envoyer" onclick="envoyerFormulaire()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><path d="M22 2L11 13"/><path d="M22 2L15 22 11 13 2 9l20-7z"/></svg>
+          Envoyer la demande
+        </button>
+        <button type="button" class="btn-secondary" id="btn-pdf" onclick="genererPDF()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Enregistrer en PDF
+        </button>
+      </div>
+    </div>
+  </form>
+</main>
+</div>
+
+<!-- ══ PAGE HISTORIQUE ══ -->
+<div id="page-histo" class="page">
+  <div class="histo-wrap">
+    <div class="histo-head">
+      <div class="histo-title">Historique des demandes</div>
+      <div class="histo-filters">
+
+        <select id="f-type-sel" onchange="renderHisto()"><option value="">Tous types</option><option>Kulanz</option><option>CCR</option></select>
+        <select id="f-stat-sel" onchange="renderHisto()">
+          <option value="">Tous statuts</option><option>En attente</option><option>Validée</option><option>Refusée</option><option>Complément requis</option>
+        </select>
+        <button class="btn-vider" onclick="viderHistorique()">🗑 Vider</button>
+      </div>
+    </div>
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-n gold" id="s-total">0</div><div class="stat-l">Total</div></div>
+      <div class="stat-card"><div class="stat-n orange" id="s-wait">0</div><div class="stat-l">En attente</div></div>
+      <div class="stat-card"><div class="stat-n green" id="s-ok">0</div><div class="stat-l">Validées</div></div>
+      <div class="stat-card"><div class="stat-n red" id="s-no">0</div><div class="stat-l">Refusées</div></div>
+    </div>
+    <div class="table-box">
+      <div class="tbl-scroll">
+        <table>
+          <thead><tr>
+            <th>Date</th><th>Site</th><th>Type</th><th>N° OR</th><th>Châssis</th>
+            <th>Code dom.</th><th>Statut</th><th>Prise en charge</th><th>Commentaire</th><th>Action</th>
+          </tr></thead>
+          <tbody id="histo-body"></tbody>
+        </table>
+      </div>
+      <div id="histo-empty" class="empty-state" style="display:none">Aucune demande trouvée</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ PANNEAU VALIDATION ══ -->
+<div id="sp-overlay" onclick="closeSP()"></div>
+<div id="side-panel">
+  <div class="sp-head">
+    <div><h3>Validation de la demande</h3><p id="sp-sub">—</p></div>
+    <button class="sp-close" onclick="closeSP()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  </div>
+  <div class="sp-body">
+    <div class="sp-sec">
+      <div class="sp-sec-title">Informations</div>
+      <div class="sp-info-grid">
+        <div class="sp-info"><div class="sp-info-l">Site</div><div class="sp-info-v" id="sp-site">—</div></div>
+        <div class="sp-info"><div class="sp-info-l">Type</div><div class="sp-info-v" id="sp-type">—</div></div>
+        <div class="sp-info"><div class="sp-info-l">N° OR</div><div class="sp-info-v" id="sp-or">—</div></div>
+        <div class="sp-info"><div class="sp-info-l">Châssis</div><div class="sp-info-v" id="sp-chassis" style="font-size:10px">—</div></div>
+        <div class="sp-info"><div class="sp-info-l">Code dommage</div><div class="sp-info-v" id="sp-dom" style="font-size:11px">—</div></div>
+        <div class="sp-info"><div class="sp-info-l">Date</div><div class="sp-info-v" id="sp-date">—</div></div>
+      </div>
+    </div>
+    <div class="sp-sec">
+      <div class="sp-sec-title">Statut</div>
+      <div class="field">
+        <label>Nouveau statut</label>
+        <select class="sp-statut" id="sp-statut" onchange="onStatutChange()">
+          <option value="En attente">🟡 En attente</option>
+          <option value="Validée">✅ Validée</option>
+          <option value="Refusée">❌ Refusée</option>
+          <option value="Complément requis">🔄 Complément requis</option>
+        </select>
+      </div>
+      <div class="field" style="margin-top:10px">
+        <label>Commentaire <span class="opt">(optionnel)</span></label>
+        <input type="text" id="sp-comment" placeholder="Ex : OK SAGA, dossier complet…">
+      </div>
+    </div>
+    <div class="sp-sec" id="sp-commerce" style="display:none">
+      <div class="sp-sec-title">Commerce de détail</div>
+      <table class="commerce-table">
+        <thead><tr><th>Poste</th><th>Prise en charge %</th></tr></thead>
+        <tbody>
+          <tr><td>Main d'œuvre</td><td><div class="pct"><input class="c-inp" id="c-mo" type="number" min="0" max="100" placeholder="0"><span>%</span></div></td></tr>
+          <tr><td>Pièces</td><td><div class="pct"><input class="c-inp" id="c-pi" type="number" min="0" max="100" placeholder="0"><span>%</span></div></td></tr>
+          <tr><td>MO extérieure</td><td><div class="pct"><input class="c-inp" id="c-moe" type="number" min="0" max="100" placeholder="0"><span>%</span></div></td></tr>
+          <tr><td>Pièces ext.</td><td><div class="pct"><input class="c-inp" id="c-pe" type="number" min="0" max="100" placeholder="0"><span>%</span></div></td></tr>
+        </tbody>
+      </table>
+      <div class="field" style="margin-top:12px">
+        <label>Type d'extension / Kulanz</label>
+        <input type="text" id="c-type-ext" placeholder="Ex : Extension de garantie…">
+      </div>
+    </div>
+    <div class="sp-sec">
+      <div class="sp-sec-title">Authentification</div>
+      <div class="field">
+        <label>Mot de passe TeamGarantie <span class="req">*</span></label>
+        <input type="password" id="sp-pwd" placeholder="••••••••••••" onkeydown="if(event.key==='Enter')validerSP()">
+        <div class="sp-pwd-err" id="sp-pwd-err">Mot de passe incorrect.</div>
+      </div>
+    </div>
+  </div>
+  <div class="sp-footer">
+    <button class="sp-cancel" onclick="closeSP()">Annuler</button>
+    <button class="sp-ok" id="sp-ok-btn" onclick="validerSP()">✔ Confirmer</button>
+  </div>
+</div>
+
+
+<!-- ══ MODAL VIDER HISTORIQUE ══ -->
+<div id="vider-modal">
+  <div class="vm-box">
+    <div class="vm-icon">🗑️</div>
+    <div class="vm-title">Vider l'historique</div>
+    <!-- Étape 1 : confirmation -->
+    <div class="vm-step active" id="vm-step1">
+      <div class="vm-sub">Vous êtes sur le point de <strong>supprimer définitivement</strong> toutes les demandes enregistrées.</div>
+      <div class="vm-warn">⚠ Cette action est irréversible. Toutes les données seront effacées de la base Firebase.</div>
+      <div class="vm-btns">
+        <button class="vm-btn-cancel" onclick="closeViderModal()">Annuler</button>
+        <button class="vm-btn-confirm" onclick="viderStep2()">Oui, je veux tout effacer</button>
+      </div>
+    </div>
+    <!-- Étape 2 : mot de passe -->
+    <div class="vm-step" id="vm-step2">
+      <div class="vm-sub">Confirmez votre identité pour autoriser la suppression.</div>
+      <div class="field">
+        <label>Mot de passe TeamGarantie <span class="req">*</span></label>
+        <input type="password" id="vider-pwd" placeholder="••••••••••••" onkeydown="if(event.key==='Enter')viderConfirm()">
+        <div class="vm-pwd-err" id="vider-pwd-err">Mot de passe incorrect.</div>
+      </div>
+      <div class="vm-btns" style="margin-top:14px">
+        <button class="vm-btn-cancel" onclick="closeViderModal()">Annuler</button>
+        <button class="vm-btn-confirm" id="vider-ok-btn" onclick="viderConfirm()">🗑 Supprimer définitivement</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<!-- ═══ SCRIPTS ═══ -->
+<!-- CDN Libraries -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+<!-- Données (codes dommage, avarie) -->
+<script src="js/data.js"></script>
+
+<!-- Application -->
+<script src="js/app.js"></script>
+
+</body>
+</html>
