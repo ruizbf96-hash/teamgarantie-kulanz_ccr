@@ -163,8 +163,11 @@ function ouvrirApp() {
     ge('site-display').value = G.site;
     renderKulanzForm(G.site);
     ge('site-field').style.display = 'flex';
-    ge('kvps').value = KVPS_MAP[G.site] || '';
-    ge('kvps').readOnly = true;
+    var kvpsEl = ge('kvps');
+    if (kvpsEl) { kvpsEl.value = KVPS_MAP[G.site] || ''; kvpsEl.readOnly = true; }
+    // Aussi remplir via le champ name= (compatibilité)
+    var kvpsName = document.querySelector('[name="kvps"]');
+    if (kvpsName) { kvpsName.value = KVPS_MAP[G.site] || ''; kvpsName.readOnly = true; }
     document.querySelectorAll('.s-btn').forEach(function(b) {
       b.classList.toggle('active', b.textContent.trim() === G.site);
     });
@@ -212,7 +215,9 @@ function selectSite(btn, name) {
   if (btn) btn.classList.add('active');
   var fsite = ge('f-site'); if(fsite) fsite.value = name;
   var hn = ge('h-site-name'); if(hn) hn.textContent = name || 'Tous les sites';
-  var kvps = ge('kvps'); if(kvps && !kvps.readOnly) kvps.value = KVPS_MAP[name] || '';
+  // Remplir KVPS si usager (readOnly = usager, writable = team)
+  var kvpsEl2 = ge('kvps');
+  if (kvpsEl2 && !kvpsEl2.readOnly) kvpsEl2.value = KVPS_MAP[name] || '';
   renderKulanzForm(name);
 }
 
@@ -676,7 +681,9 @@ document.addEventListener('change', function(e) {
   saveDraft();
   if (e.target.name === 'tpi')  ge('tpi-num-field').style.display = e.target.value==='OUI' ? 'flex' : 'none';
   if (e.target.name === 'cig')  { var ct=ge('cig-taux'); ct.disabled=e.target.value!=='superieur'; if(!ct.disabled) ct.focus(); }
-  if (['tuning','dernier_entretien','lien_entretien'].indexOf(e.target.name) >= 0) checkKulanzNok();
+  // Déclencher checkKulanzNok sur tout radio dans la section KULANZ
+  var kzone = ge('kulanz-questions');
+  if (kzone && kzone.contains(e.target)) checkKulanzNok();
 });
 
 // \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
@@ -1542,3 +1549,4 @@ function checkKulanzNok() {
 
   zone.classList.add('show');
 }
+
