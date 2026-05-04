@@ -423,12 +423,11 @@ function ssPickFromEl(el) {
 
 
 function fillCascadeFromCode(code, desigLabel) {
-  // Trouver la rubrique et la catégorie pour ce code
+  // Trouver rubrique + catégorie pour ce code
   var foundRub = '', foundCat = '';
   Object.keys(RUB_LABEL_CODES).forEach(function(k) {
-    if (RUB_LABEL_CODES[k].indexOf(code) !== -1) {
-      var parts = k.split('|||');
-      if (!foundRub) { foundRub = parts[0]; }
+    if (RUB_LABEL_CODES[k].indexOf(code) !== -1 && !foundRub) {
+      foundRub = k.split('|||')[0];
     }
   });
   if (foundRub) {
@@ -436,40 +435,56 @@ function fillCascadeFromCode(code, desigLabel) {
       if (CAT_RUBS[cat].indexOf(foundRub) !== -1) foundCat = cat;
     });
   }
-
-  // Remplir désignation si pas déjà remplie manuellement
-  if (desigLabel) {
-    var dv = ge('desig-val');
-    if (dv && !dv.dataset.manual) {
-      dv.value = desigLabel;
-      ssState['desig'] = {code:desigLabel, label:desigLabel};
-      var dBtn = ge('ss-desig-btn');
-      if (dBtn) { dBtn.classList.add('filled'); dBtn.disabled = false;
-        var dt = dBtn.querySelector('.ss-txt'); if(dt) dt.textContent = desigLabel; }
-      var dh = ge('ss-desig-hint');
-      if(dh){dh.textContent='✔ '+desigLabel;dh.className='hint ok';}
+  // Remplir désignation si vide
+  var dv = ge('desig-val');
+  if (dv && !dv.value && desigLabel) {
+    dv.value = desigLabel;
+    ssState['desig'] = { code: desigLabel, label: desigLabel };
+    var dBtn = ge('ss-desig-btn');
+    if (dBtn) { dBtn.classList.add('filled');
+      var dt = dBtn.querySelector('.ss-txt'); if(dt) dt.textContent = desigLabel; }
+    var dh = ge('ss-desig-hint');
+    if(dh){ dh.textContent = '\u2714 '+desigLabel; dh.className = 'hint ok'; }
+  }
+  // Remplir rubrique si vide
+  if (foundRub) {
+    var rv = ge('rub-val');
+    if (rv && !rv.value) {
+      rv.value = foundRub;
+      ssState['rub'] = { code: foundRub, label: foundRub };
+      var rBtn = ge('ss-rub-btn');
+      if(rBtn){ rBtn.classList.add('filled');
+        var rt = rBtn.querySelector('.ss-txt'); if(rt) rt.textContent = foundRub; }
+      var rh = ge('ss-rub-hint');
+      if(rh){ rh.textContent = '\u2714 '+foundRub; rh.className = 'hint ok'; }
     }
   }
-
-  // Remplir rubrique
-  if (foundRub) {
-    var rv = ge('rub-val'); if(rv) rv.value = foundRub;
-    ssState['rub'] = {code:foundRub, label:foundRub};
-    var rBtn = ge('ss-rub-btn');
-    if(rBtn){rBtn.classList.add('filled');rBtn.disabled=false;
-      var rt=rBtn.querySelector('.ss-txt');if(rt)rt.textContent=foundRub;}
-    var rh=ge('ss-rub-hint');if(rh){rh.textContent='✔ '+foundRub;rh.className='hint ok';}
-  }
-
-  // Remplir catégorie
+  // Remplir catégorie si vide
   if (foundCat) {
-    var ci = ge('dom-cat'); if(ci) ci.value = foundCat;
-    document.querySelectorAll('.cat-btn').forEach(function(b){
-      b.classList.toggle('active', b.getAttribute('data-cat') === foundCat);
-    });
-    var ch = ge('cat-hint');
-    if(ch){ch.textContent='✔ '+foundCat;ch.className='hint ok';}
+    var ci = ge('dom-cat');
+    if (ci && !ci.value) {
+      ci.value = foundCat;
+      document.querySelectorAll('.cat-btn').forEach(function(b){
+        b.classList.toggle('active', b.getAttribute('data-cat') === foundCat);
+      });
+      var ch = ge('cat-hint');
+      if(ch){ ch.textContent = '\u2714 '+foundCat; ch.className = 'hint ok'; }
+    }
   }
+}
+
+
+
+function ssRenderSoft(key) {
+  // Rafraîchit les options du dropdown sans effacer la valeur sélectionnée
+  var curState = ssState[key];
+  var drop = ge('ss-'+key+'-drop');
+  if (drop && drop.classList.contains('open')) {
+    // Dropdown ouvert → re-render avec la query actuelle
+    var inp = ge('ss-'+key+'-inp');
+    ssRender(key, inp ? inp.value : '');
+  }
+  // Si pas ouvert, ne rien faire — les données seront rechargées à la prochaine ouverture
 }
 
 function ssPick(key, code, label) {
@@ -477,89 +492,84 @@ function ssPick(key, code, label) {
   ssState[key] = { code: code, label: cleanLabel };
   var valEl = ge(key+'-val'); if(valEl) valEl.value = code;
   var lblEl = ge(key+'-lbl'); if(lblEl) lblEl.value = cleanLabel;
-  var txt = ge('ss-'+key+'-txt');
-  var btn = ge('ss-'+key+'-btn');
+  var txt  = ge('ss-'+key+'-txt');
+  var btn  = ge('ss-'+key+'-btn');
   if (btn) btn.classList.add('filled');
   var hint = ge('ss-'+key+'-hint');
 
   if (key === 'rub') {
-    // Rubrique sélectionnée → afficher label, activer désignation
-    if (txt) txt.textContent = cleanLabel;
-    if (hint) { hint.textContent = '✔ ' + cleanLabel; hint.className = 'hint ok'; }
-    // Stocker dans rub-val
+    if (txt)  txt.textContent  = cleanLabel;
+    if (hint) { hint.textContent = '\u2714 ' + cleanLabel; hint.className = 'hint ok'; }
     var rv = ge('rub-val'); if(rv) rv.value = cleanLabel;
-    // Reset désignation + code
-    ssResetDesig();
-    var dBtn = ge('ss-desig-btn');
-    if (dBtn) { dBtn.disabled=false; dBtn.classList.remove('filled');
-      var dt=dBtn.querySelector('.ss-txt'); if(dt)dt.textContent='🔍 Sélectionner une désignation…'; }
-    ssState['desig']=null; var dvRub=ge('desig-val'); if(dvRub){dvRub.value='';dvRub.dataset.manual='';}
-    ssRender('desig','');
+    // Rafraîchir désignation ET code avec le nouveau filtre — sans effacer les sélections
+    ssRenderSoft('desig');
+    ssRenderSoft('dom');
 
   } else if (key === 'desig') {
-    // Désignation sélectionnée → afficher label, activer code
-    if (txt) txt.textContent = cleanLabel;
-    if (hint) { hint.textContent = '✔ ' + cleanLabel; hint.className = 'hint ok'; }
-    // Reset code
-    ssReset('dom');
+    if (txt)  txt.textContent  = cleanLabel;
+    if (hint) { hint.textContent = '\u2714 ' + cleanLabel; hint.className = 'hint ok'; }
+    var dv = ge('desig-val'); if(dv) dv.value = cleanLabel;
+    // Chercher les codes pour cette désignation et auto-sélectionner si 1 seul
     var rubVal = ge('rub-val') ? ge('rub-val').value : '';
     var k = rubVal + '|||' + cleanLabel;
     var codes = RUB_LABEL_CODES[k] || [];
-    // Fallback si pas de rubrique
     if (!codes.length) {
-      Object.keys(RUB_LABEL_CODES).forEach(function(k2){
-        if(k2.split('|||')[1]===cleanLabel) codes=codes.concat(RUB_LABEL_CODES[k2]);
+      Object.keys(RUB_LABEL_CODES).forEach(function(k2) {
+        if (k2.split('|||')[1] === cleanLabel) codes = codes.concat(RUB_LABEL_CODES[k2]);
       });
     }
+    // Dédupliquer
+    codes = codes.filter(function(c,i){ return codes.indexOf(c)===i; });
     var domBtn = ge('ss-dom-btn');
     if (domBtn) {
-      domBtn.disabled = false; domBtn.classList.remove('filled');
-      var dt2=domBtn.querySelector('.ss-txt');
-      if(dt2) dt2.textContent = codes.length===1 ? codes[0] : '🔍 '+codes.length+' code(s) disponible(s)…';
+      domBtn.classList.remove('filled');
+      var dt = domBtn.querySelector('.ss-txt');
+      if (dt) dt.textContent = codes.length === 1
+        ? codes[0]
+        : '\U0001F50D ' + codes.length + ' code(s) \u2014 s\u00e9lectionnez\u2026';
     }
-    ssRender('dom','');
-    if (codes.length===1) { setTimeout(function(){ ssPick('dom',codes[0],cleanLabel); },50); }
+    ssRenderSoft('dom');
+    if (codes.length === 1) { setTimeout(function(){ ssPick('dom', codes[0], cleanLabel); }, 50); }
 
   } else if (key === 'dom') {
-    if (txt) txt.textContent = code;
-    if (hint) { hint.textContent = '✔ ' + code; hint.className = 'hint ok'; }
+    if (txt)  txt.textContent = code;
+    if (hint) { hint.textContent = '\u2714 ' + code; hint.className = 'hint ok'; }
+    // Cascade inverse : remplir désig + rub + cat SEULEMENT si pas déjà remplis
     fillCascadeFromCode(code, cleanLabel);
+
   } else if (key === 'ava') {
-    if (txt) txt.textContent = code + ' — ' + cleanLabel;
-    if (hint) { hint.textContent = '✔ ' + cleanLabel; hint.className = 'hint ok'; }
+    if (txt)  txt.textContent = code + ' \u2014 ' + cleanLabel;
+    if (hint) { hint.textContent = '\u2714 ' + cleanLabel; hint.className = 'hint ok'; }
 
   } else {
-    if (txt) txt.textContent = code + ' — ' + cleanLabel;
-    if (hint) { hint.textContent = '✔ ' + cleanLabel; hint.className = 'hint ok'; }
+    if (txt)  txt.textContent = code + ' \u2014 ' + cleanLabel;
+    if (hint) { hint.textContent = '\u2714 ' + cleanLabel; hint.className = 'hint ok'; }
   }
   ssClose();
   saveDraft();
 }
 
+
 function ssClear(key) {
   ssState[key] = null;
-  var valEl = ge(key+'-val'); if(valEl) valEl.value = '';
+  var valEl = ge(key+'-val'); if(valEl) { valEl.value = ''; if(valEl.dataset) valEl.dataset.manual = ''; }
   var lblEl = ge(key+'-lbl'); if(lblEl) lblEl.value = '';
-  var btn = ge('ss-'+key+'-btn'); if(btn) btn.classList.remove('filled');
-  var hint = ge('ss-'+key+'-hint'); if(hint){hint.textContent='';hint.className='hint';}
-  var txt = ge('ss-'+key+'-txt');
-  if (key === 'rub') {
-    if(txt)txt.textContent='↑ Sélectionnez d’abord une catégorie…';
-    var rv=ge('rub-val'); if(rv)rv.value='';
-    ssResetDesig(); return;
-  }
-  if (key === 'desig') {
-    if(txt)txt.textContent='↑ Sélectionnez d’abord une rubrique…';
-    ssResetDesig(); return;
-  }
-  if (key === 'dom') {
-    if(txt)txt.textContent='🔍 Sélectionner un code dommage…';
-  }
-  if (key === 'ava') {
-    if(txt)txt.textContent='🔍 Sélectionner un code avarie…';
-  }
-  ssClose(); saveDraft();
+  var btn   = ge('ss-'+key+'-btn'); if(btn) btn.classList.remove('filled');
+  var hint  = ge('ss-'+key+'-hint'); if(hint){ hint.textContent=''; hint.className='hint'; }
+  var txt   = ge('ss-'+key+'-txt');
+  var defaults = {
+    rub:   '\U0001F50D Rechercher une rubrique\u2026',
+    desig: '\U0001F50D Rechercher une d\u00e9signation\u2026',
+    dom:   '\U0001F50D Rechercher par code ou lib\u00e9ll\u00e9\u2026',
+    ava:   '\U0001F50D S\u00e9lectionner un code avarie\u2026'
+  };
+  if (txt) txt.textContent = defaults[key] || '\U0001F50D S\u00e9lectionner\u2026';
+  // Aussi vider le champ rub-val si on efface la rubrique
+  if (key === 'rub') { var rv = ge('rub-val'); if(rv) rv.value = ''; }
+  ssClose();
+  saveDraft();
 }
+
 
 function ssReset(key) {
   ssClear(key);
@@ -567,16 +577,14 @@ function ssReset(key) {
 function ssResetDesig() {
   ssState['desig'] = null;
   var dv = ge('desig-val'); if(dv){dv.value='';dv.dataset.manual='';}
-  var dBtn=ge('ss-desig-btn');
-  if(dBtn){dBtn.disabled=true;dBtn.classList.remove('filled');
+  var dBtn=ge('ss-desig-btn'); if(dBtn){dBtn.classList.remove('filled');
     var t=dBtn.querySelector('.ss-txt');
-    if(t)t.textContent='↑ Sélectionnez d’abord une rubrique…';}
+    if(t)t.textContent='🔍 Rechercher une désignation…';}
   var dHint=ge('ss-desig-hint'); if(dHint){dHint.textContent='';dHint.className='hint';}
   ssReset('dom');
-  var domBtn=ge('ss-dom-btn');
-  if(domBtn){domBtn.disabled=true;domBtn.classList.remove('filled');
+  var domBtn=ge('ss-dom-btn'); if(domBtn){domBtn.classList.remove('filled');
     var t2=domBtn.querySelector('.ss-txt');
-    if(t2)t2.textContent='↑ Choisir désignation d’abord…';}
+    if(t2)t2.textContent='🔍 Rechercher par code ou libéllé…';}
 }
 
 function ssSet(key, code, label) {
@@ -587,16 +595,20 @@ function ssSet(key, code, label) {
 function ssToggle(key) {
   var drop = ge('ss-'+key+'-drop');
   var btn  = ge('ss-'+key+'-btn');
-  var wasOpen = drop.classList.contains('open');
+  if (!drop || !btn) return;
+  var isOpen = drop.classList.contains('open');
   ssClose();
-  if (!wasOpen) {
+  if (!isOpen) {
     drop.classList.add('open');
     btn.classList.add('open');
+    // Charger les données à l'ouverture avec la query actuelle
     var inp = ge('ss-'+key+'-inp');
-    if (inp) { inp.value = ''; inp.focus(); }
-    ssRender(key, '');
+    var query = inp ? inp.value : '';
+    ssRender(key, query);
+    if (inp) { inp.focus(); }
   }
 }
+
 
 function ssClose() {
   ['dom','ava','desig','rub'].forEach(function(k) {
@@ -1454,14 +1466,13 @@ function resetCat() {
   var ci=ge('dom-cat'); if(ci)ci.value='';
   var mr=ge('cat-manual-row'); if(mr)mr.classList.remove('show');
   var hint=ge('cat-hint'); if(hint){hint.textContent='';hint.className='hint';}
-  // Reset rubrique
   ssState['rub']=null;
   var rv=ge('rub-val'); if(rv)rv.value='';
   var rubBtn=ge('ss-rub-btn');
-  if(rubBtn){rubBtn.disabled=true;rubBtn.classList.remove('filled');
+  if(rubBtn){rubBtn.classList.remove('filled');
     var t=rubBtn.querySelector('.ss-txt');
-    if(t)t.textContent='↑ Sélectionnez d’abord une catégorie…';}
-  var rHint=ge('ss-rub-hint'); if(rHint){rHint.textContent='';rHint.className='hint';}
+    if(t)t.textContent='🔍 Rechercher une rubrique…';}
+  var rh=ge('ss-rub-hint'); if(rh){rh.textContent='';rh.className='hint';}
   ssResetDesig();
 }
 
@@ -1785,3 +1796,4 @@ function checkKulanzNok() {
 
   zone.classList.add('show');
 }
+
