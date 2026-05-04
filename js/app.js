@@ -20,7 +20,7 @@ var SITE_BRAND = {
 
 var KULANZ_BY_BRAND = {
   'VW': [
-    {name:'tpi',             label:"Y a-t-il une TPI ?",                                              nok:'NON', info:"TPI manquante"},
+    {name:'tpi',             label:"Y a-t-il une TPI ?",                                              nok:null},
     {name:'opteven',         label:"Garantie OPTEVEN visible dans ELSA ?",                            nok:null},
     {name:'tuning',          label:"Code tuning dans SAGA ?",                                         nok:'OUI', info:"Code tuning détecté → NOK"},
     {name:'piece_usure',     label:"La pièce concernée est une pièce d'usure ?",       nok:'OUI', info:"Pièce d'usure non couverte"},
@@ -31,7 +31,7 @@ var KULANZ_BY_BRAND = {
     {name:'lien_entretien',  label:"Un lien peut être établi entre la cause du dommage et l'entretien ?", nok:'OUI', info:"Lien dommage/entretien détecté"}
   ],
   'Audi': [
-    {name:'tpi',             label:"Y a-t-il une TPI ?",                                              nok:'NON', info:"TPI manquante"},
+    {name:'tpi',             label:"Y a-t-il une TPI ?",                                              nok:null},
     {name:'opteven',         label:"Garantie OPTEVEN visible dans ELSA ?",                            nok:null},
     {name:'tuning',          label:"Code tuning dans SAGA ?",                                         nok:'OUI', info:"Code tuning détecté → NOK"},
     {name:'piece_usure',     label:"La pièce concernée est une pièce d'usure ?",       nok:'OUI', info:"Pièce d'usure non couverte"},
@@ -42,7 +42,7 @@ var KULANZ_BY_BRAND = {
     {name:'lien_entretien',  label:"Un lien peut être établi entre la cause du dommage et l'entretien ?", nok:'OUI', info:"Lien dommage/entretien détecté"}
   ],
   'SEAT': [
-    {name:'tpi',             label:"Y a-t-il une TPI ?",                                              nok:'NON', info:"TPI manquante"},
+    {name:'tpi',             label:"Y a-t-il une TPI ?",                                              nok:null},
     {name:'opteven',         label:"Garantie OPTEVEN visible dans ELSA ?",                            nok:null},
     {name:'tuning',          label:"Code tuning dans SAGA ?",                                         nok:'OUI', info:"Code tuning détecté → NOK"},
     {name:'piece_usure',     label:"La pièce concernée est une pièce d'usure ?",       nok:'OUI', info:"Pièce d'usure non couverte"},
@@ -53,7 +53,7 @@ var KULANZ_BY_BRAND = {
     {name:'lien_entretien',  label:"Un lien peut être établi entre la cause du dommage et l'entretien ?", nok:'OUI', info:"Lien dommage/entretien détecté"}
   ],
   'SKODA': [
-    {name:'tpi',             label:"Y a-t-il une TPI ?",                                              nok:'NON', info:"TPI manquante"},
+    {name:'tpi',             label:"Y a-t-il une TPI ?",                                              nok:null},
     {name:'opteven',         label:"Garantie OPTEVEN visible dans ELSA ?",                            nok:null},
     {name:'tuning',          label:"Code tuning dans SAGA ?",                                         nok:'OUI', info:"Code tuning détecté → NOK"},
     {name:'piece_usure',     label:"La pièce concernée est une pièce d'usure ?",       nok:'OUI', info:"Pièce d'usure non couverte"},
