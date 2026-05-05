@@ -160,6 +160,22 @@ function startListener() {
 // \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
 function ge(id) { return document.getElementById(id); }
 
+
+function ouvrirOutlookCCR() {
+  var ml = window._lastMailto || '';
+  if (!ml) { toast('⚠ Aucun mail préparé.'); return; }
+  try {
+    var _a = document.createElement('a');
+    _a.href = ml;
+    _a.style.display = 'none';
+    document.body.appendChild(_a);
+    _a.click();
+    setTimeout(function(){ document.body.removeChild(_a); }, 500);
+  } catch(e) {
+    window.location.href = ml;
+  }
+}
+
 function copierObjetMail() {
   var subj = window._ccrSubject || '';
   try {
@@ -357,7 +373,7 @@ function setType(t) {
   [].forEach.call(document.querySelectorAll('.k-section'), function(el) { el.style.display = isK ? 'block' : 'none'; });
   [].forEach.call(document.querySelectorAll('.c-section'), function(el) { el.style.display = !isK ? 'block' : 'none'; });
   ge('comm-num').textContent = isK ? '4' : '6';
-  ge('btn-copy-kulanz').style.display = isK ? 'none' : 'flex';
+  ge('btn-copy-kulanz').style.display = isK ? 'flex' : 'none';
 }
 
 // \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
@@ -808,18 +824,18 @@ function copyKulanz() {
   if (k.dom_rub) {
     var rv=ge('rub-val'); if(rv)rv.value=k.dom_rub;
     ssState['rub']={code:k.dom_rub,label:k.dom_rub};
-    var rb=ge('ss-rub-btn'); if(rb){rb.disabled=false;rb.classList.add('filled');
+    var rb=ge('ss-rub-btn'); if(rb){rb.classList.add('filled');
       var rt=rb.querySelector('.ss-txt');if(rt)rt.textContent=k.dom_rub;}
   }
   if (k.desig_piece) {
     var dv=ge('desig-val'); if(dv)dv.value=k.desig_piece;
     ssState['desig']={code:k.desig_piece,label:k.desig_piece};
-    var db=ge('ss-desig-btn'); if(db){db.disabled=false;db.classList.add('filled');
+    var db=ge('ss-desig-btn'); if(db){db.classList.add('filled');
       var dt=db.querySelector('.ss-txt');if(dt)dt.textContent=k.desig_piece;}
   }
   if (k.dom_code) {
     ssSet('dom', k.dom_code, k.dom_lbl);
-    var db2=ge('ss-dom-btn'); if(db2)db2.disabled=false;
+
   }
   ssSet('ava', k.ava_code, k.ava_lbl);
   if (k.chassis) {
@@ -827,7 +843,10 @@ function copyKulanz() {
     if (h) { h.textContent = vinHint(k.chassis); h.className = 'hint'+(isValidVIN(k.chassis)?' ok':' err'); }
     ge('chassis').className = isValidVIN(k.chassis) ? 'ok' : 'invalid';
   }
-  toast('✔ Données Kulanz copiées !');
+  // Re-rendre le formulaire KULANZ pour le site copié
+  if (k.site) renderKulanzForm(k.site);
+  setType('C'); // Passer en CCR
+  toast('✔ Données Kulanz copiées en CCR !');
 }
 
 // \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
@@ -1094,9 +1113,12 @@ function envoyerFormulaire() {
       +'<div style="font-weight:700;color:#c0392b;margin-bottom:10px">\u26a0\ufe0f ACTIONS OBLIGATOIRES :</div>'
       +'\u2705 <strong>1.</strong> PDF g\u00e9n\u00e9r\u00e9 \u2014 sauvegardez-le<br><br>'
       +'\u2709\ufe0f <strong>2.</strong> '
-      +'<a href="'+_ml2+'" style="color:#1a73e8;font-weight:700;font-size:14px">'
-      +'\ud83d\udce7 Cliquez ici pour ouvrir Outlook</a>'
-      +'<br><span style="font-size:11px;color:#888">Si Outlook ne s\'ouvre pas, copiez l\'objet ci-dessous et envoyez manuellement.</span>'
+      +'<button type="button" onclick="ouvrirOutlookCCR()" '
+      +'style="background:#0078d4;color:#fff;border:none;border-radius:6px;'
+      +'padding:8px 16px;font-size:13px;font-weight:700;cursor:pointer">'
+      +'\ud83d\udce7 Ouvrir Outlook</button>'
+      +'<br><span style="font-size:11px;color:#888;margin-top:4px;display:block">'
+      +'Si le bouton ne fonctionne pas \u2192 copiez l\'objet ci-dessous et cr\u00e9ez un nouveau mail manuellement.</span>'
       +'<br><br><div style="background:#f5f5f5;border:1px solid #ccc;border-radius:4px;padding:8px;font-size:11px">'
       +'<strong>\u00c0 :</strong> teamgarantie@geauto.fr<br>'
       +'<strong>Objet :</strong> '+esc(_sbj2)
