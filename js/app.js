@@ -1,7 +1,23 @@
+// Polyfill Element.closest() pour Edge/IE
+if (!Element.prototype.closest) {
+  Element.prototype.closest = function(s) {
+    var el = this;
+    do {
+      if (el.matches ? el.matches(s) : el.msMatchesSelector(s)) return el;
+      el = el.parentElement || el.parentNode;
+    } while (el !== null && el.nodeType === 1);
+    return null;
+  };
+}
+if (!Element.prototype.matches) {
+  Element.prototype.matches = Element.prototype.msMatchesSelector ||
+                               Element.prototype.webkitMatchesSelector;
+}
+
 'use strict';
 
-var SITES     = ['Audi Hœnheim','Audi Obernai','SEAT Hœnheim','SKODA Hœnheim','VW Bischheim','VW Illkirch','VW Obernai'];
-var KVPS_MAP  = {'Audi Hœnheim':'02155','Audi Obernai':'02486','SEAT Hœnheim':'63930','SKODA Hœnheim':'02376','VW Bischheim':'02154','VW Illkirch':'02153','VW Obernai':'02485'};
+var SITES     = ['Audi Hœnheim','Audi Obernai','SEAT Hœnheim','SEAT Illkirch','SKODA Hœnheim','SKODA Obernai','VW Bischheim','VW Illkirch','VW Obernai'];
+var KVPS_MAP  = {'Audi Hœnheim':'02155','Audi Obernai':'02486','SEAT Hœnheim':'63930','SEAT Illkirch':'02153','SKODA Hœnheim':'02376','SKODA Obernai':'02485','VW Bischheim':'02154','VW Illkirch':'02153','VW Obernai':'02485'};
 var MOT_DE_PASSE = 'Garantie2026';
 var WEB3_KEY     = '7bf5b927-e39f-4fc1-9f60-642e4741e445';
 
@@ -12,7 +28,9 @@ var SITE_BRAND = {
   'Audi Hœnheim': 'Audi',
   'Audi Obernai':      'Audi',
   'SEAT Hœnheim': 'SEAT',
+  'SEAT Illkirch':     'SEAT',
   'SKODA Hœnheim':'SKODA',
+  'SKODA Obernai':     'SKODA',
   'VW Bischheim':      'VW',
   'VW Illkirch':       'VW',
   'VW Obernai':        'VW'
@@ -59,7 +77,7 @@ var KULANZ_BY_BRAND = {
     {name:'piece_usure',     label:"La pièce concernée est une pièce d'usure ?",       nok:'OUI', info:"Pièce d'usure non couverte"},
     {name:'piece_entretien', label:"La pièce concernée est liée à l'entretien ?", nok:null},
     {name:'preconisations',  label:"Tous les entretiens ont été réalisés en respectant les préconisations du constructeur (Km/durée) ? (Aucun entretien n'est à faire)", nok:'NON', info:"Préconisations non respectées"},
-    {name:'entretien_moment',label:"Un entretien est-il à faire au moment de la réparation ? (Échéance non dépassée)", nok:null},
+    {name:'entretien_moment',label:"Un entretien est-il à faire au moment de la réparation ? (Échéance non dépassée)", nok:null, has_nc:true},
     {name:'vendu_client',    label:"Si oui, est-il vendu au client et réalisé en même temps que la réparation ?", nok:null},
     {name:'justificatifs',   label:"Disposez-vous des justificatifs des 2 derniers entretiens ? (Hors entretien fait au moment de la réparation)", nok:'NON', info:"Justificatifs manquants"},
     {name:'justif_preco',    label:"Si oui, ont-ils été réalisés en respectant les préconisations constructeur ?", nok:'NON', info:"Préconisations non respectées sur les 2 derniers entretiens"},
@@ -232,7 +250,7 @@ function ouvrirApp() {
     // Aussi remplir via le champ name= (compatibilité)
     var kvpsName = document.querySelector('[name="kvps"]');
     if (kvpsName) { kvpsName.value = KVPS_MAP[G.site] || ''; kvpsName.readOnly = true; }
-    document.querySelectorAll('.s-btn').forEach(function(b) {
+    [].forEach.call(document.querySelectorAll('.s-btn'), function(b) {
       b.classList.toggle('active', b.textContent.trim() === G.site);
     });
   }
@@ -256,7 +274,7 @@ function deconnecter() {
   ge('site-field').style.display = 'none';
   ge('type-bar').style.display = 'flex';
   ge('kvps').readOnly = false;
-  document.querySelectorAll('.s-btn').forEach(function(b) { b.classList.remove('active'); });
+  [].forEach.call(document.querySelectorAll('.s-btn'), function(b) { b.classList.remove('active'); });
   ge('f-site').value = '';
   ge('h-site-name').textContent = '—';
   ssReset('dom'); ssReset('ava');
@@ -267,8 +285,8 @@ function deconnecter() {
 // NAVIGATION
 // \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
 function showPage(page, tabEl) {
-  document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('active'); });
-  document.querySelectorAll('.nav-tab').forEach(function(t) { t.classList.remove('active'); });
+  [].forEach.call(document.querySelectorAll('.page'), function(p) { p.classList.remove('active'); });
+  [].forEach.call(document.querySelectorAll('.nav-tab'), function(t) { t.classList.remove('active'); });
   ge('page-'+page).classList.add('active');
   if (tabEl) tabEl.classList.add('active');
   ge('type-bar').style.display = (page === 'form') ? 'flex' : 'none';
@@ -276,7 +294,7 @@ function showPage(page, tabEl) {
 }
 
 function selectSite(btn, name) {
-  document.querySelectorAll('.s-btn').forEach(function(b) { b.classList.remove('active'); });
+  [].forEach.call(document.querySelectorAll('.s-btn'), function(b) { b.classList.remove('active'); });
   if (btn) btn.classList.add('active');
   var fsite = ge('f-site'); if(fsite) fsite.value = name;
   var hn = ge('h-site-name'); if(hn) hn.textContent = name || 'Tous les sites';
@@ -292,8 +310,8 @@ function setType(t) {
   if (!isK) saveKulanz();
   else {
     // Reset champs CCR
-    document.querySelectorAll('[name="pieces[]"]').forEach(function(cb) { cb.checked = false; });
-    document.querySelectorAll('[name="kulanz_done"],[name="cig"]').forEach(function(r) { r.checked = false; });
+    [].forEach.call(document.querySelectorAll('[name="pieces[]"]'), function(cb) { cb.checked = false; });
+    [].forEach.call(document.querySelectorAll('[name="kulanz_done"],[name="cig"]'), function(r) { r.checked = false; });
     var ct = ge('cig-taux'); if (ct) { ct.value = ''; ct.disabled = true; }
   }
   ge('btn-k').classList.toggle('active', isK);
@@ -304,8 +322,8 @@ function setType(t) {
   }
   ge('btn-c').classList.toggle('active', !isK);
   ge('f-type').value = isK ? 'Kulanz' : 'CCR';
-  document.querySelectorAll('.k-section').forEach(function(el) { el.style.display = isK ? 'block' : 'none'; });
-  document.querySelectorAll('.c-section').forEach(function(el) { el.style.display = !isK ? 'block' : 'none'; });
+  [].forEach.call(document.querySelectorAll('.k-section'), function(el) { el.style.display = isK ? 'block' : 'none'; });
+  [].forEach.call(document.querySelectorAll('.c-section'), function(el) { el.style.display = !isK ? 'block' : 'none'; });
   ge('comm-num').textContent = isK ? '4' : '6';
   ge('btn-copy-kulanz').style.display = isK ? 'none' : 'flex';
 }
@@ -336,8 +354,8 @@ function ssData(key) {
       });
     } else {
       var sv2 = {};
-      Object.values(RUB_LABELS).forEach(function(arr) {
-        arr.forEach(function(l){ if(!sv2[l]){sv2[l]=true;labels.push(l);} });
+      Object.keys(RUB_LABELS).forEach(function(rub) {
+        RUB_LABELS[rub].forEach(function(l){ if(!sv2[l]){sv2[l]=true;labels.push(l);} });
       });
     }
     return labels.map(function(l){ return {code:l, label:l}; });
@@ -575,7 +593,7 @@ function fillCascadeFromCode(code, desigLabel) {
     var rh=ge('ss-rub-hint');if(rh){rh.textContent='\u2714 '+fRub;rh.className='hint ok';}}
   if (fCat && !curCat) {
     var ci=ge('dom-cat');if(ci)ci.value=fCat;
-    document.querySelectorAll('.cat-btn').forEach(function(b){
+    [].forEach.call(document.querySelectorAll('.cat-btn'), function(b){
       b.classList.toggle('active',b.getAttribute('data-cat')===fCat);
     });
     var ch=ge('cat-hint');if(ch){ch.textContent='\u2714 '+fCat;ch.className='hint ok';}
@@ -641,7 +659,7 @@ function acPick(el) {
   if (d.site && G.role === 'team') {
     ge('f-site').value = d.site;
     ge('h-site-name').textContent = d.site;
-    document.querySelectorAll('.s-btn').forEach(function(b) { b.classList.toggle('active', b.textContent.trim()===d.site); });
+    [].forEach.call(document.querySelectorAll('.s-btn'), function(b) { b.classList.toggle('active', b.textContent.trim()===d.site); });
   }
   toast('✔ Véhicule reconnu — informations pré-remplies');
 }
@@ -683,7 +701,7 @@ function copyKulanz() {
   if (k.site) {
     ge('f-site').value = k.site;
     ge('h-site-name').textContent = k.site;
-    document.querySelectorAll('.s-btn').forEach(function(b) { b.classList.toggle('active', b.textContent.trim()===k.site); });
+    [].forEach.call(document.querySelectorAll('.s-btn'), function(b) { b.classList.toggle('active', b.textContent.trim()===k.site); });
   }
   // Restaurer la cascade
   if (k.dom_cat) {
@@ -740,6 +758,11 @@ function saveDraft() {
       ava_code: ge('ava-val') ? ge('ava-val').value : '',
       ava_lbl: ge('ava-lbl') ? ge('ava-lbl').value : ''
     };
+    var _s=ge('f-site')?ge('f-site').value:'';
+    var _q=(typeof KULANZ_BY_BRAND!=='undefined'&&typeof SITE_BRAND!=='undefined')
+      ?(KULANZ_BY_BRAND[SITE_BRAND[_s]||'VW']||[]):[];
+    _q.forEach(function(q){b['k_'+q.name]=gr(q.name)||'';});
+    b.num_tpi=gv('num_tpi')||'';
     try { localStorage.setItem('gea_draft', JSON.stringify(b)); } catch(e) {}
   }, 700);
 }
@@ -757,7 +780,7 @@ function restoreDraft() {
     if (b.site && SITES.indexOf(b.site) !== -1 && G.role === 'team') {
       ge('f-site').value = b.site;
       ge('h-site-name').textContent = b.site;
-      document.querySelectorAll('.s-btn').forEach(function(btn) { btn.classList.toggle('active', btn.textContent.trim()===b.site); });
+      [].forEach.call(document.querySelectorAll('.s-btn'), function(btn) { btn.classList.toggle('active', btn.textContent.trim()===b.site); });
     }
     ['chassis','kilometrage','or_number','kvps','technicien','email_usager',
      'plainte_client','emplacement','ref_piece','commentaires'].forEach(function(n) {
@@ -788,9 +811,25 @@ function restoreDraft() {
       var dm=ge('ss-dom-btn'); if(dm){dm.disabled=false;dm.classList.add('filled');
         var dmt=dm.querySelector('.ss-txt');if(dmt)dmt.textContent=b.dom_code;}
     }
+    // Re-rendre le formulaire KULANZ pour le bon site avant de restaurer
+    var draftSite = (b.site && SITES.indexOf(b.site) !== -1) ? b.site : (ge('f-site')?ge('f-site').value:'');
+    if (draftSite) renderKulanzForm(draftSite);
     ssSet('ava', b.ava_code, b.ava_lbl);
     if (b.type === 'CCR') setType('C');
     if (b.chassis) onChassis(ge('chassis'));
+    // Restaurer les réponses KULANZ
+    if (qs) {
+      var brandQs = typeof KULANZ_BY_BRAND!=='undefined'?KULANZ_BY_BRAND[SITE_BRAND[draftSite]||'VW']||[]:[];
+      brandQs.forEach(function(q){
+        var val = b['k_'+q.name];
+        if (val) {
+          var radios = document.querySelectorAll('[name="'+q.name+'"]');
+          [].forEach.call(radios, function(r){ r.checked = (r.value===val); });
+        }
+      });
+      if (b.num_tpi) { sv('num_tpi', b.num_tpi); toggleTpiField(true); }
+    }
+    checkKulanzNok();
     toast('✔ Brouillon restauré !');
   } catch(e) { console.warn('Draft restore error:', e); }
 }
@@ -803,7 +842,7 @@ document.addEventListener('input',  function(e) {
 document.addEventListener('change', function(e) {
   if (!e.target.closest('#mainForm')) return;
   saveDraft();
-  if (e.target.name === 'tpi')  ge('tpi-num-field').style.display = e.target.value==='OUI' ? 'flex' : 'none';
+  if (e.target.name === 'tpi')  toggleTpiField(e.target.value === 'OUI');
   if (e.target.name === 'cig')  { var ct=ge('cig-taux'); ct.disabled=e.target.value!=='superieur'; if(!ct.disabled) ct.focus(); }
   // Déclencher checkKulanzNok sur tout radio dans la section KULANZ
   var kzone = ge('kulanz-questions');
@@ -950,6 +989,11 @@ function nouvelleDemande() {
   setType('K');
   var nok = ge('kulanz-nok-alert'); if(nok){ nok.classList.remove('show'); nok.innerHTML=''; }
   resetCat();
+  var kz=ge('kulanz-questions'); if(kz){[].forEach.call(kz.querySelectorAll('input[type=radio]'),function(r){r.checked=false;});}
+  var tpif=ge('tpi-num-field'); if(tpif)tpif.style.display='none';
+  var vw=ge('vendu-wrapper'); if(vw)vw.style.display='none';
+  var va=ge('vendu-alert'); if(va){va.style.display='none';va.innerHTML='';}
+  var kna=ge('kulanz-nok-alert'); if(kna){kna.classList.remove('show');kna.innerHTML='';}  
   if(ge('desig-val')){ge('desig-val').value='';ge('desig-val').dataset.manual='';}
   if(ge('rub-val'))ge('rub-val').value='';
   ssState['rub']=null;
@@ -964,7 +1008,7 @@ function nouvelleDemande() {
     ge('kvps').readOnly = true;
     ge('site-display').value = G.site;
   } else {
-    document.querySelectorAll('.s-btn').forEach(function(b) { b.classList.remove('active'); });
+    [].forEach.call(document.querySelectorAll('.s-btn'), function(b) { b.classList.remove('active'); });
     ge('f-site').value = '';
   }
   window.scrollTo({top:0,behavior:'smooth'});
@@ -1198,12 +1242,12 @@ function dashClick(el) {
   ge('f-site').value = newSite;
   ge('h-site-name').textContent = newSite || 'Tous les sites';
   // Synchroniser site-bar boutons
-  document.querySelectorAll('.s-btn').forEach(function(b) {
+  [].forEach.call(document.querySelectorAll('.s-btn'), function(b) {
     b.classList.toggle('active', b.textContent.trim() === newSite);
   });
   // Basculer sur l'historique
-  document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('active'); });
-  document.querySelectorAll('.nav-tab').forEach(function(t) { t.classList.remove('active'); });
+  [].forEach.call(document.querySelectorAll('.page'), function(p) { p.classList.remove('active'); });
+  [].forEach.call(document.querySelectorAll('.nav-tab'), function(t) { t.classList.remove('active'); });
   ge('page-histo').classList.add('active');
   ge('tab-histo').classList.add('active');
   ge('type-bar').style.display = 'none';
@@ -1395,7 +1439,7 @@ function resetCascadeBelow(from) {
 }
 
 function selectCat(btn) {
-  document.querySelectorAll('.cat-btn').forEach(function(b){ b.classList.remove('active'); });
+  [].forEach.call(document.querySelectorAll('.cat-btn'), function(b){ b.classList.remove('active'); });
   if (btn) btn.classList.add('active');
   var cat = btn ? btn.getAttribute('data-cat') : '';
   var ci = ge('dom-cat'); if(ci) ci.value = cat;
@@ -1432,7 +1476,7 @@ function catManualConfirm() {
   var hint = ge('cat-hint');
   if(hint){ hint.textContent = '✔ Catégorie libre: '+cat; hint.className = 'hint ok'; }
   var mr = ge('cat-manual-row'); if(mr) mr.classList.remove('show');
-  document.querySelectorAll('.cat-btn').forEach(function(b){ b.classList.remove('active'); });
+  [].forEach.call(document.querySelectorAll('.cat-btn'), function(b){ b.classList.remove('active'); });
   var manBtn = document.querySelector('.cat-btn.manual'); if(manBtn) manBtn.classList.add('active');
   resetCascadeBelow('cat');
   toast('✔ Catégorie "'+cat+'" définie');
@@ -1441,7 +1485,7 @@ function catManualConfirm() {
 
 
 function resetCat() {
-  document.querySelectorAll('.cat-btn').forEach(function(b){ b.classList.remove('active'); });
+  [].forEach.call(document.querySelectorAll('.cat-btn'), function(b){ b.classList.remove('active'); });
   var ci = ge('dom-cat'); if(ci) ci.value = '';
   var mr = ge('cat-manual-row'); if(mr) mr.classList.remove('show');
   var hint = ge('cat-hint'); if(hint){ hint.textContent=''; hint.className='hint'; }
@@ -1620,9 +1664,9 @@ function renderKulanzForm(site) {
 
     // ── TPI ──
     if (q.name === 'tpi') {
-      html += '<div class="field">'
+      html += '<div class="field" style="margin-bottom:12px">'
         + '<label>' + q.label + '</label>'
-        + '<div class="radio-g">'
+        + '<div class="radio-g" style="gap:16px;margin-top:6px">'
         + '<label class="r-item"><input type="radio" name="tpi" value="OUI" onchange="checkKulanzNok();toggleTpiField(true)"> Oui</label>'
         + '<label class="r-item"><input type="radio" name="tpi" value="NON" onchange="checkKulanzNok();toggleTpiField(false)"> Non</label>'
         + '</div>'
@@ -1644,7 +1688,7 @@ function renderKulanzForm(site) {
       html += '<div id="' + triggerId + '" style="display:none">'
         + '<div class="field">'
         + '<label>' + q.label + '</label>'
-        + '<div class="radio-g">'
+        + '<div class="radio-g" style="gap:16px;margin-top:6px">'
         + '<label class="r-item"><input type="radio" name="vendu_client" value="OUI" onchange="checkKulanzNok();hideVenduAlert()"> Oui</label>'
         + '<label class="r-item"><input type="radio" name="vendu_client" value="NON" onchange="checkKulanzNok();showVenduAlert()"> Non</label>'
         + '</div>'
@@ -1663,14 +1707,26 @@ function renderKulanzForm(site) {
     var onchangeExtra = isDernierEntretien ? ';toggleVenduClient(this.value)' : '';
     var triggerNok = q.nok ? ' onchange="checkKulanzNok()' + onchangeExtra + '"' : (isDernierEntretien ? ' onchange="toggleVenduClient(this.value)"' : '');
 
-    html += '<div class="field">'
-      + '<label>' + q.label + '</label>'
-      + '<div class="radio-g">'
-      + '<label class="r-item"><input type="radio" name="' + q.name + '" value="OUI"' + triggerNok + '> Oui' + nokOui + '</label>'
-      + '<label class="r-item"><input type="radio" name="' + q.name + '" value="NON"' + triggerNok + '> Non' + nokNon + '</label>'
-      + '</div>'
-      + '</div>'
-      + divider;
+    if (q.has_nc) {
+      html += '<div class="field" style="margin-bottom:12px">'
+        + '<label>' + q.label + '</label>'
+        + '<div class="radio-g" style="gap:16px;margin-top:6px">'
+        + '<label class="r-item"><input type="radio" name="' + q.name + '" value="OUI"' + triggerNok + '> Oui' + nokOui + '</label>'
+        + '<label class="r-item"><input type="radio" name="' + q.name + '" value="NON"' + triggerNok + '> Non' + nokNon + '</label>'
+        + '<label class="r-item"><input type="radio" name="' + q.name + '" value="NC" onchange="checkKulanzNok()"> Non concerné</label>'
+        + '</div>'
+        + '</div>'
+        + divider;
+    } else {
+      html += '<div class="field" style="margin-bottom:12px">'
+        + '<label>' + q.label + '</label>'
+        + '<div class="radio-g" style="gap:16px;margin-top:6px">'
+        + '<label class="r-item"><input type="radio" name="' + q.name + '" value="OUI"' + triggerNok + '> Oui' + nokOui + '</label>'
+        + '<label class="r-item"><input type="radio" name="' + q.name + '" value="NON"' + triggerNok + '> Non' + nokNon + '</label>'
+        + '</div>'
+        + '</div>'
+        + divider;
+    }
   });
 
   zone.innerHTML = html;
@@ -1727,7 +1783,7 @@ function checkKulanzNok() {
   questions.forEach(function(q) {
     if (!q.nok) return;
     var val = gr(q.name);
-    if (val === q.nok) {
+    if (q.nok && val === q.nok) {
       reasons.push(q.info || q.label);
     }
   });
