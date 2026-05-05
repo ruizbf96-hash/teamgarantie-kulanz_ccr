@@ -1094,7 +1094,7 @@ function envoyerFormulaire() {
       +'<div style="font-weight:700;color:#c0392b;margin-bottom:10px">\u26a0\ufe0f ACTIONS OBLIGATOIRES :</div>'
       +'\u2705 <strong>1.</strong> PDF g\u00e9n\u00e9r\u00e9 \u2014 sauvegardez-le<br><br>'
       +'\u2709\ufe0f <strong>2.</strong> '
-      +'<a href="'+_ml2+'" target="_blank" style="color:#1a73e8;font-weight:700;font-size:14px">'
+      +'<a href="'+_ml2+'" style="color:#1a73e8;font-weight:700;font-size:14px">'
       +'\ud83d\udce7 Cliquez ici pour ouvrir Outlook</a>'
       +'<br><span style="font-size:11px;color:#888">Si Outlook ne s\'ouvre pas, copiez l\'objet ci-dessous et envoyez manuellement.</span>'
       +'<br><br><div style="background:#f5f5f5;border:1px solid #ccc;border-radius:4px;padding:8px;font-size:11px">'
@@ -1172,18 +1172,17 @@ function nouvelleDemande() {
   resetCat();
   var _dci=ge('dom-cat'); if(_dci) _dci.value='';
   var kz=ge('kulanz-questions'); if(kz){[].forEach.call(kz.querySelectorAll('input[type=radio]'),function(r){r.checked=false;});}
-  var tpif=ge('tpi-num-field'); if(tpif)tpif.style.display='none';
+  toggleTpiField(false);
+  var _ce=ge('chk-engagement'); if(_ce) _ce.checked=false;
+  var _cew=ge('ccr-engagement-wrap'); if(_cew) _cew.style.display='none';
   var vw=ge('vendu-wrapper'); if(vw)vw.style.display='none';
   var va=ge('vendu-alert'); if(va){va.style.display='none';va.innerHTML='';}
   var kna=ge('kulanz-nok-alert'); if(kna){kna.classList.remove('show');kna.innerHTML='';}  
   if(ge('desig-val')){ge('desig-val').value='';ge('desig-val').dataset.manual='';}
   if(ge('rub-val'))ge('rub-val').value='';
-  ssState['rub']=null;
-  var rubBtn2=ge('ss-rub-btn');
-  if(rubBtn2){rubBtn2.disabled=true;rubBtn2.classList.remove('filled');
-    var rt2=rubBtn2.querySelector('.ss-txt');
-    if(rt2)rt2.textContent='↑ Sélectionnez d’abord une catégorie…';}
-  var rhint2=ge('ss-rub-hint');if(rhint2){rhint2.textContent='';rhint2.className='hint';}
+  // Réinitialiser cascade via resetBelow
+  resetBelow('cat');
+  enableAllDropdowns();
   if (G.role === 'usager') {
     ge('f-site').value = G.site;
     ge('kvps').value = KVPS_MAP[G.site]||'';
