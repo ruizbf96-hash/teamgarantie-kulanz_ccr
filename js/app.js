@@ -524,10 +524,10 @@ function ssRender(key, query) {
   var filtered;
   if (!q) {
     filtered = items;
-  } else if (key === 'dom') {
+  } else if (key === 'dom' || key === 'ava') {
     // Code: commence par | label: contient
     filtered = items.filter(function(it) {
-      return it.code.toLowerCase().indexOf(q) === 0
+      return it.code.toLowerCase().indexOf(q) !== -1
           || it.label.toLowerCase().indexOf(q) !== -1;
     });
   } else {
@@ -1010,7 +1010,18 @@ function envoyerFormulaire() {
 
   var btn = ge('btn-envoyer');
   if (!btn || btn.disabled) return;
-  if (!confirm("Confirmer l'envoi ?\n\nSite\u00a0: "+site+"\nN\u00b0 OR\u00a0: "+gv('or_number')+"\nChassis\u00a0: "+gv('chassis'))) return;
+  var confirmMsg = isCCR
+    ? "\u26a0\ufe0f AVANT D'ENVOYER \u2014 Demande CCR\n\n"
+      + "Site : "+site+"\nN\u00b0 OR : "+gv('or_number')+"\nCh\u00e2ssis : "+gv('chassis')+"\n\n"
+      + "\u25b6 \u00c9TAPES OBLIGATOIRES :\n"
+      + "  1. Cliquez OK \u2192 le PDF se g\u00e9n\u00e8re automatiquement\n"
+      + "  2. Sauvegardez le PDF sur votre poste\n"
+      + "  3. Outlook va s'ouvrir avec l'objet pr\u00e9-rempli\n"
+      + "  4. Joignez le PDF + tous les documents justificatifs\n"
+      + "  5. Envoyez depuis Outlook\n\n"
+      + "Confirmer et g\u00e9n\u00e9rer le PDF ?"
+    : "Confirmer l'envoi ?\n\nSite\u00a0: "+site+"\nN\u00b0 OR\u00a0: "+gv('or_number')+"\nCh\u00e2ssis\u00a0: "+gv('chassis');
+  if (!confirm(confirmMsg)) return;
 
   var d = collectData();
 
@@ -1028,7 +1039,10 @@ function envoyerFormulaire() {
     var mailto  = 'mailto:teamgarantie@geauto.fr'
                 + '?subject=' + encodeURIComponent(subject)
                 + '&body='    + encodeURIComponent(corpsLimite);
-    window.location.href = mailto;
+    // Ouvrir Outlook — window.open est plus fiable que location.href
+    var mailOpened = false;
+    try { window.open(mailto, '_blank'); mailOpened = true; } catch(e) {}
+    if (!mailOpened) { window.location.href = mailto; }
     var newD = {
       id: Date.now()+'_'+Math.random().toString(36).slice(2,5),
       date: new Date().toLocaleDateString('fr-FR'),
