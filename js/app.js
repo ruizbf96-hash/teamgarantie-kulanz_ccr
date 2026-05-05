@@ -159,6 +159,22 @@ function startListener() {
 // UTILITAIRES
 // \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
 function ge(id) { return document.getElementById(id); }
+
+function copierObjetMail() {
+  var subj = window._ccrSubject || '';
+  try {
+    var t = document.createElement('textarea');
+    t.value = subj;
+    t.style.position = 'fixed';
+    t.style.opacity  = '0';
+    document.body.appendChild(t);
+    t.focus(); t.select();
+    document.execCommand('copy');
+    document.body.removeChild(t);
+    toast('✔ Objet copié !');
+  } catch(e) { alert('Objet : ' + subj); }
+}
+
 function esc(s) {
   return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
@@ -1067,12 +1083,26 @@ function envoyerFormulaire() {
     if (demandesRef) demandesRef.child('d'+newD.id.replace(/[^a-zA-Z0-9]/g,'')).set(newD).catch(function(e){console.warn('Firebase CCR:',e);});
     else G.demandes.unshift(newD);
     try { (function(){ var _lk=localStorage.getItem('gea_draft_last')||'gea_draft';localStorage.removeItem(_lk);localStorage.removeItem('gea_draft_last');})(); } catch(e) {}
+    var _ml2  = window._lastMailto  || '';
+    var _sbj2 = window._lastSubject || '';
+    window._ccrSubject = _sbj2;
     ge('success-details').innerHTML =
-      '<strong>Site\u00a0:</strong> '+esc(newD.site)+'<br>'+
-      '<strong>Type\u00a0:</strong> CCR<br>'+
-      '<strong>N\u00b0 OR\u00a0:</strong> '+esc(newD.or)+'<br>'+
-      '<strong>Ch\u00e2ssis\u00a0:</strong> '+esc(newD.chassis)+'<br>'+
-      '<strong>\u2139 Outlook ouvert \u2014 joignez le PDF avant d\u2019envoyer.</strong>';
+      '<strong>Site\u00a0:</strong> '+esc(newD.site)
+      +'&nbsp;&nbsp;<strong>N\u00b0 OR\u00a0:</strong> '+esc(newD.or)
+      +'&nbsp;&nbsp;<strong>Ch\u00e2ssis\u00a0:</strong> '+esc(newD.chassis)
+      +'<div style="background:#fff8e1;border:2px solid #f39c12;border-radius:8px;padding:14px;margin-top:10px">'
+      +'<div style="font-weight:700;color:#c0392b;margin-bottom:10px">\u26a0\ufe0f ACTIONS OBLIGATOIRES :</div>'
+      +'\u2705 <strong>1.</strong> PDF g\u00e9n\u00e9r\u00e9 \u2014 sauvegardez-le<br><br>'
+      +'\u2709\ufe0f <strong>2.</strong> '
+      +'<a href="'+_ml2+'" target="_blank" style="color:#1a73e8;font-weight:700;font-size:14px">'
+      +'\ud83d\udce7 Cliquez ici pour ouvrir Outlook</a>'
+      +'<br><span style="font-size:11px;color:#888">Si Outlook ne s\'ouvre pas, copiez l\'objet ci-dessous et envoyez manuellement.</span>'
+      +'<br><br><div style="background:#f5f5f5;border:1px solid #ccc;border-radius:4px;padding:8px;font-size:11px">'
+      +'<strong>\u00c0 :</strong> teamgarantie@geauto.fr<br>'
+      +'<strong>Objet :</strong> '+esc(_sbj2)
+      +'<button type="button" onclick="copierObjetMail()" style="margin-left:8px;padding:3px 10px;font-size:11px;background:#ddd;border:1px solid #bbb;border-radius:3px;cursor:pointer">\ud83d\udccb Copier</button></div>'
+      +'<br>\ud83d\udcce <strong>3.</strong> Joindre le <strong>PDF</strong> + documents justificatifs'
+      +'<br>\ud83d\udce4 <strong>4.</strong> Envoyer depuis Outlook</div>';
     ge('success-overlay').classList.add('open');
     setTimeout(function(){
       btn.disabled = false;
