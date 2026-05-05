@@ -317,10 +317,10 @@ function setType(t) {
   ge('btn-k').classList.toggle('active', isK);
   // Afficher/cacher la case engagement CCR
   var engWrap = ge('ccr-engagement-wrap');
-  if (engWrap) engWrap.style.display = isCCR ? 'block' : 'none';
+  if (engWrap) engWrap.style.display = !isK ? 'block' : 'none';
   // Réinitialiser la case si on change de type
   var chkE = ge('chk-engagement');
-  if (chkE && !isCCR) chkE.checked = false;
+  if (chkE && isK) chkE.checked = false;
   if (isK) {
     var curSite = ge('f-site') ? ge('f-site').value : '';
     if (curSite) renderKulanzForm(curSite);
