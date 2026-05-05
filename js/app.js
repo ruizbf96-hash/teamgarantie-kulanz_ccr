@@ -106,6 +106,10 @@ var db = null;
 var demandesRef = null;
 
 function initFirebase() {
+  if (typeof firebase === 'undefined') {
+    console.warn('Firebase non chargé');
+    return;
+  }
   try {
     var cfg = {
       apiKey:"AIzaSyDPsep7yTE-UAjGGSioZfVAozGEo_lSmSQ",
@@ -1867,15 +1871,6 @@ function renderKulanzForm(site) {
 // ═══════════════════════════════════════════════════════════
 // KULANZ NOK — alerte + règles par marque
 // ═══════════════════════════════════════════════════════════
-var BRAND_RULES = {
-  'Audi Hoenheim': 'audi',
-  'Audi Obernai': 'audi',
-  'SEAT Hoenheim': 'seat',
-  'SKODA Hoenheim': 'skoda',
-  'VW Bischheim': 'vw',
-  'VW Illkirch': 'vw',
-  'VW Obernai': 'vw'
-};
 
 var BRAND_TEXTS = {
   audi: {
