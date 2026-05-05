@@ -340,54 +340,74 @@ function ssData(key) {
   var desigV = ge('desig-val') ? ge('desig-val').value : '';
 
   if (key === 'rub') {
+    // Filtrer par catégorie si définie, sinon toutes les rubriques
     var rubs = (cat && CAT_RUBS[cat]) ? CAT_RUBS[cat] : Object.keys(RUB_LABELS);
     return rubs.map(function(r){ return {code:r, label:r}; });
   }
+
   if (key === 'desig') {
     var labels = [];
     if (rubVal && RUB_LABELS[rubVal]) {
+      // Rubrique sélectionnée → ses désignations
       labels = RUB_LABELS[rubVal];
     } else if (cat && CAT_RUBS[cat]) {
-      var sv = {};
+      // Catégorie sélectionnée → toutes désignations de ses rubriques
+      var seen = {};
       CAT_RUBS[cat].forEach(function(rub) {
-        (RUB_LABELS[rub]||[]).forEach(function(l){ if(!sv[l]){sv[l]=true;labels.push(l);} });
+        (RUB_LABELS[rub] || []).forEach(function(l) {
+          if (!seen[l]) { seen[l] = true; labels.push(l); }
+        });
       });
     } else {
-      var sv2 = {};
+      // Aucun filtre → toutes les désignations
+      var seen2 = {};
       Object.keys(RUB_LABELS).forEach(function(rub) {
-        RUB_LABELS[rub].forEach(function(l){ if(!sv2[l]){sv2[l]=true;labels.push(l);} });
+        (RUB_LABELS[rub] || []).forEach(function(l) {
+          if (!seen2[l]) { seen2[l] = true; labels.push(l); }
+        });
       });
     }
     return labels.map(function(l){ return {code:l, label:l}; });
   }
+
   if (key === 'dom') {
+    // Codes filtrés selon rub + desig disponibles
     if (rubVal && desigV) {
-      var k = rubVal+'|||'+desigV;
-      var codes = RUB_LABEL_CODES[k]||[];
-      if (!codes.length) Object.keys(RUB_LABEL_CODES).forEach(function(k2){
-        if(k2.split('|||')[1]===desigV) codes=codes.concat(RUB_LABEL_CODES[k2]);
-      });
-      return codes.map(function(c){ return {code:c,label:desigV}; });
+      var k = rubVal + '|||' + desigV;
+      var codes = RUB_LABEL_CODES[k] || [];
+      // Fallback si la clé exacte n'existe pas
+      if (!codes.length) {
+        Object.keys(RUB_LABEL_CODES).forEach(function(k2) {
+          if (k2.split('|||')[1] === desigV) codes = codes.concat(RUB_LABEL_CODES[k2]);
+        });
+      }
+      return codes.filter(function(c,i){return codes.indexOf(c)===i;})
+                  .map(function(c){ return {code:c, label:desigV}; });
     }
     if (desigV) {
-      var fd=[]; Object.keys(RUB_LABEL_CODES).forEach(function(k3){
-        if(k3.split('|||')[1]===desigV) fd=fd.concat(RUB_LABEL_CODES[k3]);
+      var found = [];
+      Object.keys(RUB_LABEL_CODES).forEach(function(k3) {
+        if (k3.split('|||')[1] === desigV) found = found.concat(RUB_LABEL_CODES[k3]);
       });
-      fd=fd.filter(function(c,i){return fd.indexOf(c)===i;});
-      return fd.map(function(c){return{code:c,label:desigV};});
+      return found.filter(function(c,i){return found.indexOf(c)===i;})
+                  .map(function(c){ return {code:c, label:desigV}; });
     }
-    var rubsScope = rubVal?[rubVal]:(cat&&CAT_RUBS[cat]?CAT_RUBS[cat]:Object.keys(RUB_LABELS));
-    var ac=[]; var sc={};
-    rubsScope.forEach(function(rub){
-      Object.keys(RUB_LABEL_CODES).forEach(function(k4){
-        if(k4.split('|||')[0]===rub){
-          var l4=k4.split('|||')[1];
-          RUB_LABEL_CODES[k4].forEach(function(c){if(!sc[c]){sc[c]=true;ac.push({code:c,label:l4});}});
+    // Scope: par rubrique active, catégorie active, ou tout
+    var scope = rubVal ? [rubVal]
+              : (cat && CAT_RUBS[cat] ? CAT_RUBS[cat] : Object.keys(RUB_LABELS));
+    var all = []; var seenC = {};
+    scope.forEach(function(rub) {
+      Object.keys(RUB_LABEL_CODES).forEach(function(k4) {
+        if (k4.split('|||')[0] === rub) {
+          var lbl = k4.split('|||')[1];
+          RUB_LABEL_CODES[k4].forEach(function(c) {
+            if (!seenC[c]) { seenC[c] = true; all.push({code:c, label:lbl}); }
+          });
         }
       });
     });
-    ac.sort(function(a,b){return parseInt(a.code)-parseInt(b.code);});
-    return ac;
+    all.sort(function(a,b){ return parseInt(a.code) - parseInt(b.code); });
+    return all;
   }
   return [];
 }
@@ -396,20 +416,26 @@ function ssData(key) {
 
 function ssClear(key) {
   ssState[key] = null;
-  var valEl = ge(key+'-val'); if(valEl) { valEl.value = ''; if(valEl.dataset) valEl.dataset.manual = ''; }
-  var lblEl = ge(key+'-lbl'); if(lblEl) lblEl.value = '';
-  var btn   = ge('ss-'+key+'-btn'); if(btn) btn.classList.remove('filled');
-  var hint  = ge('ss-'+key+'-hint'); if(hint){ hint.textContent=''; hint.className='hint'; }
-  var txt   = ge('ss-'+key+'-txt');
-  var defaults = {
-    rub:   '\U0001F50D Rechercher une rubrique\u2026',
-    desig: '\U0001F50D Rechercher une d\u00e9signation\u2026',
-    dom:   '\U0001F50D Rechercher par code ou lib\u00e9ll\u00e9\u2026',
-    ava:   '\U0001F50D S\u00e9lectionner un code avarie\u2026'
+  var valEl = ge(key + '-val');
+  if (valEl) { valEl.value = ''; if (valEl.dataset) valEl.dataset.manual = ''; }
+  var lblEl = ge(key + '-lbl'); if (lblEl) lblEl.value = '';
+  var btn   = ge('ss-' + key + '-btn'); if (btn) btn.classList.remove('filled');
+  var hint  = ge('ss-' + key + '-hint'); if (hint){ hint.textContent=''; hint.className='hint'; }
+  var txt   = ge('ss-' + key + '-txt');
+  var ph = {
+    rub:   'Rechercher une rubrique…',
+    desig: 'Rechercher une désignation…',
+    dom:   'Rechercher par code ou libéllé…',
+    ava:   'Sélectionner un code avarie…'
   };
-  if (txt) txt.textContent = defaults[key] || '\U0001F50D S\u00e9lectionner\u2026';
-  // Aussi vider le champ rub-val si on efface la rubrique
-  if (key === 'rub') { var rv = ge('rub-val'); if(rv) rv.value = ''; }
+  if (txt) txt.textContent = ph[key] || 'Sélectionner…';
+  // Propager le reset vers le bas
+  if (key === 'rub') {
+    var rv = ge('rub-val'); if (rv) rv.value = '';
+    resetBelow('rub');
+  } else if (key === 'desig') {
+    resetBelow('desig');
+  }
   ssClose();
   saveDraft();
 }
@@ -437,19 +463,17 @@ function ssSet(key, code, label) {
 }
 
 function ssToggle(key) {
-  var drop = ge('ss-'+key+'-drop');
-  var btn  = ge('ss-'+key+'-btn');
+  var drop = ge('ss-' + key + '-drop');
+  var btn  = ge('ss-' + key + '-btn');
   if (!drop || !btn) return;
   var isOpen = drop.classList.contains('open');
   ssClose();
   if (!isOpen) {
     drop.classList.add('open');
     btn.classList.add('open');
-    // Charger les données à l'ouverture avec la query actuelle
-    var inp = ge('ss-'+key+'-inp');
-    var query = inp ? inp.value : '';
-    ssRender(key, query);
-    if (inp) { inp.focus(); }
+    var inp = ge('ss-' + key + '-inp');
+    ssRender(key, inp ? inp.value : '');
+    if (inp) inp.focus();
   }
 }
 
@@ -480,14 +504,15 @@ function ssRenderSoft(key) {
 
 function ssRender(key, query) {
   var items = ssData(key);
-  var q = (query||'').toLowerCase().trim();
+  var q = (query || '').toLowerCase().trim();
   var filtered;
   if (!q) {
     filtered = items;
   } else if (key === 'dom') {
+    // Code: commence par | label: contient
     filtered = items.filter(function(it) {
-      return it.code.toLowerCase().indexOf(q) === 0 ||
-             it.label.toLowerCase().indexOf(q) !== -1;
+      return it.code.toLowerCase().indexOf(q) === 0
+          || it.label.toLowerCase().indexOf(q) !== -1;
     });
   } else {
     filtered = items.filter(function(it) {
@@ -495,108 +520,146 @@ function ssRender(key, query) {
     });
   }
   var shown = filtered.slice(0, 200);
-  var cnt = ge('ss-'+key+'-cnt');
-  if (cnt) cnt.textContent = filtered.length + ' r\u00e9sultat' + (filtered.length!==1?'s':'') + (filtered.length>200?' \u2014 200 affich\u00e9s':'');
-  var opts = ge('ss-'+key+'-opts');
+  var cnt = ge('ss-' + key + '-cnt');
+  if (cnt) cnt.textContent = filtered.length + ' résultat' + (filtered.length !== 1 ? 's' : '')
+    + (filtered.length > 200 ? ' — 200 affichés' : '');
+  var opts = ge('ss-' + key + '-opts');
   if (!opts) return;
-  if (!shown.length) { opts.innerHTML = '<div class="ss-empty">Aucun r\u00e9sultat</div>'; return; }
+  if (!shown.length) { opts.innerHTML = '<div class="ss-empty">Aucun résultat</div>'; return; }
   var cur = ssState[key] ? ssState[key].code : '';
   opts.innerHTML = shown.map(function(it) {
-    var sel = it.code === cur ? ' sel' : '';
+    var sel = (it.code === cur) ? ' sel' : '';
     var display;
     if (key === 'dom') {
       display = '<span class="ss-code" style="font-size:13px;font-weight:700">' + esc(it.code) + '</span>'
               + '<span class="ss-lbl" style="color:#888;font-size:11px;margin-left:8px">' + esc(it.label) + '</span>';
     } else if (key === 'ava') {
-      display = '<span class="ss-code">' + esc(it.code) + '</span><span class="ss-lbl">' + esc(it.label) + '</span>';
+      display = '<span class="ss-code">' + esc(it.code) + '</span>'
+              + '<span class="ss-lbl">' + esc(it.label) + '</span>';
     } else {
       display = '<span class="ss-lbl">' + esc(it.label) + '</span>';
     }
-    return '<div class="ss-opt'+sel+'" data-code="'+esc(it.code)+'" data-label="'+esc(it.label)+'" data-key="'+key+'" onclick="ssPickFromEl(this)">'+display+'</div>';
+    return '<div class="ss-opt' + sel + '" data-code="' + esc(it.code)
+         + '" data-label="' + esc(it.label) + '" data-key="' + key
+         + '" onclick="ssPickFromEl(this)">' + display + '</div>';
   }).join('');
 }
 
 function ssPick(key, code, label) {
   var cleanLabel = decodeLabel(label);
   ssState[key] = { code: code, label: cleanLabel };
-  var valEl = ge(key+'-val'); if(valEl) valEl.value = code;
-  var lblEl = ge(key+'-lbl'); if(lblEl) lblEl.value = cleanLabel;
-  var txt  = ge('ss-'+key+'-txt');
-  var btn  = ge('ss-'+key+'-btn');
+  var valEl = ge(key + '-val'); if (valEl) valEl.value = code;
+  var lblEl = ge(key + '-lbl'); if (lblEl) lblEl.value = cleanLabel;
+  var txt  = ge('ss-' + key + '-txt');
+  var btn  = ge('ss-' + key + '-btn');
   if (btn) btn.classList.add('filled');
-  var hint = ge('ss-'+key+'-hint');
+  var hint = ge('ss-' + key + '-hint');
 
   if (key === 'rub') {
-    if (txt)  txt.textContent = cleanLabel;
-    if (hint) { hint.textContent = '\u2714 ' + cleanLabel; hint.className = 'hint ok'; }
-    var rv = ge('rub-val'); if(rv) rv.value = cleanLabel;
-    resetCascadeBelow('rub');
+    if (txt)  txt.textContent  = cleanLabel;
+    if (hint) { hint.textContent = '✔ ' + cleanLabel; hint.className = 'hint ok'; }
+    // Stocker dans rub-val AVANT le reset
+    var rv = ge('rub-val'); if (rv) rv.value = cleanLabel;
+    // Reset desig + dom (pas rub lui-même)
+    resetBelow('rub');
 
   } else if (key === 'desig') {
-    if (txt)  txt.textContent = cleanLabel;
-    if (hint) { hint.textContent = '\u2714 ' + cleanLabel; hint.className = 'hint ok'; }
-    var dv = ge('desig-val'); if(dv) dv.value = cleanLabel;
-    resetCascadeBelow('desig');
+    if (txt)  txt.textContent  = cleanLabel;
+    if (hint) { hint.textContent = '✔ ' + cleanLabel; hint.className = 'hint ok'; }
+    var dv = ge('desig-val'); if (dv) dv.value = cleanLabel;
+    // Reset dom seulement
+    resetBelow('desig');
+    // Chercher les codes pour cette désignation
     var rubVal = ge('rub-val') ? ge('rub-val').value : '';
-    var k = rubVal + '|||' + cleanLabel;
-    var codes = RUB_LABEL_CODES[k] || [];
+    var k      = rubVal + '|||' + cleanLabel;
+    var codes  = RUB_LABEL_CODES[k] || [];
     if (!codes.length) {
       Object.keys(RUB_LABEL_CODES).forEach(function(k2) {
         if (k2.split('|||')[1] === cleanLabel) codes = codes.concat(RUB_LABEL_CODES[k2]);
       });
+      codes = codes.filter(function(c, i){ return codes.indexOf(c) === i; });
     }
-    codes = codes.filter(function(c,i){ return codes.indexOf(c)===i; });
     var domBtn = ge('ss-dom-btn');
     if (domBtn) {
       domBtn.classList.remove('filled');
       var dt = domBtn.querySelector('.ss-txt');
-      if (dt) dt.textContent = codes.length===1 ? codes[0] : '\U0001F50D '+codes.length+' code(s) \u2014 s\u00e9lectionnez\u2026';
+      if (dt) dt.textContent = codes.length === 1
+        ? codes[0]
+        : '❖ ' + codes.length + ' code(s) disponible(s)';
     }
-    if (codes.length===1) { setTimeout(function(){ ssPick('dom', codes[0], cleanLabel); }, 50); }
+    // Auto-sélectionner si 1 seul code
+    if (codes.length === 1) {
+      setTimeout(function(){ ssPick('dom', codes[0], cleanLabel); }, 50);
+    }
 
   } else if (key === 'dom') {
     if (txt)  txt.textContent = code;
-    if (hint) { hint.textContent = '\u2714 ' + code; hint.className = 'hint ok'; }
+    if (hint) { hint.textContent = '✔ ' + code; hint.className = 'hint ok'; }
     fillCascadeFromCode(code, cleanLabel);
 
   } else if (key === 'ava') {
-    if (txt)  txt.textContent = code + ' \u2014 ' + cleanLabel;
-    if (hint) { hint.textContent = '\u2714 ' + cleanLabel; hint.className = 'hint ok'; }
+    if (txt)  txt.textContent = code + ' — ' + cleanLabel;
+    if (hint) { hint.textContent = '✔ ' + cleanLabel; hint.className = 'hint ok'; }
 
   } else {
-    if (txt)  txt.textContent = code + ' \u2014 ' + cleanLabel;
-    if (hint) { hint.textContent = '\u2714 ' + cleanLabel; hint.className = 'hint ok'; }
+    if (txt)  txt.textContent = code + ' — ' + cleanLabel;
+    if (hint) { hint.textContent = '✔ ' + cleanLabel; hint.className = 'hint ok'; }
   }
   ssClose();
   saveDraft();
 }
 
 function fillCascadeFromCode(code, desigLabel) {
-  var matches = [];
+  // Trouver rubrique + catégorie depuis le code
+  var foundRub = '', foundDesig = desigLabel || '', foundCat = '';
   Object.keys(RUB_LABEL_CODES).forEach(function(k) {
-    if (RUB_LABEL_CODES[k].indexOf(code) !== -1) {
-      var p=k.split('|||'), rub=p[0], lbl=p[1], cat='';
-      Object.keys(CAT_RUBS).forEach(function(c){if(CAT_RUBS[c].indexOf(rub)!==-1) cat=c;});
-      matches.push({rub:rub, desig:lbl, cat:cat});
+    if (!foundRub && RUB_LABEL_CODES[k].indexOf(code) !== -1) {
+      var parts  = k.split('|||');
+      foundRub   = parts[0];
+      foundDesig = desigLabel || parts[1];
     }
   });
-  if (!matches.length) return;
-  var curCat = ge('dom-cat')?ge('dom-cat').value:'';
-  var best = matches[0];
-  if (curCat) matches.forEach(function(m){if(m.cat===curCat) best=m;});
-  var fRub=best.rub, fDesig=desigLabel||best.desig, fCat=best.cat;
-  var dv=ge('desig-val'); if(dv){dv.value=fDesig;ssState['desig']={code:fDesig,label:fDesig};
-    var db=ge('ss-desig-btn');if(db){db.classList.add('filled');var dt=db.querySelector('.ss-txt');if(dt)dt.textContent=fDesig;}
-    var dh=ge('ss-desig-hint');if(dh){dh.textContent='\u2714 '+fDesig;dh.className='hint ok';}}
-  var rv=ge('rub-val'); if(rv){rv.value=fRub;ssState['rub']={code:fRub,label:fRub};
-    var rb=ge('ss-rub-btn');if(rb){rb.classList.add('filled');var rt=rb.querySelector('.ss-txt');if(rt)rt.textContent=fRub;}
-    var rh=ge('ss-rub-hint');if(rh){rh.textContent='\u2714 '+fRub;rh.className='hint ok';}}
-  if (fCat && !curCat) {
-    var ci=ge('dom-cat');if(ci)ci.value=fCat;
-    [].forEach.call(document.querySelectorAll('.cat-btn'), function(b){
-      b.classList.toggle('active',b.getAttribute('data-cat')===fCat);
+  if (foundRub) {
+    Object.keys(CAT_RUBS).forEach(function(cat) {
+      if (!foundCat && CAT_RUBS[cat].indexOf(foundRub) !== -1) foundCat = cat;
     });
-    var ch=ge('cat-hint');if(ch){ch.textContent='\u2714 '+fCat;ch.className='hint ok';}
+  }
+  var curCat = ge('dom-cat') ? ge('dom-cat').value : '';
+
+  // Remplir désignation si vide ou différente
+  var dv = ge('desig-val');
+  if (dv && foundDesig) {
+    dv.value = foundDesig;
+    ssState['desig'] = { code: foundDesig, label: foundDesig };
+    var db = ge('ss-desig-btn');
+    if (db) {
+      db.classList.add('filled');
+      var dt = db.querySelector('.ss-txt'); if (dt) dt.textContent = foundDesig;
+    }
+    var dh = ge('ss-desig-hint');
+    if (dh) { dh.textContent = '✔ ' + foundDesig; dh.className = 'hint ok'; }
+  }
+  // Remplir rubrique si vide
+  var rv = ge('rub-val');
+  if (rv && foundRub && !rv.value) {
+    rv.value = foundRub;
+    ssState['rub'] = { code: foundRub, label: foundRub };
+    var rb = ge('ss-rub-btn');
+    if (rb) {
+      rb.classList.add('filled');
+      var rt = rb.querySelector('.ss-txt'); if (rt) rt.textContent = foundRub;
+    }
+    var rh = ge('ss-rub-hint');
+    if (rh) { rh.textContent = '✔ ' + foundRub; rh.className = 'hint ok'; }
+  }
+  // Remplir catégorie si vide
+  if (foundCat && !curCat) {
+    var ci = ge('dom-cat'); if (ci) ci.value = foundCat;
+    [].forEach.call(document.querySelectorAll('.cat-btn'), function(b) {
+      b.classList.toggle('active', b.getAttribute('data-cat') === foundCat);
+    });
+    var ch = ge('cat-hint');
+    if (ch) { ch.textContent = '✔ ' + foundCat; ch.className = 'hint ok'; }
   }
 }
 
@@ -1415,39 +1478,52 @@ function sendStatusMail(d, statut, commentaire, commerce) {
 // SÉLECTION CATÉGORIE DOMMAGE
 // ═══════════════════════════════════════════════════════════
 
-function resetCascadeBelow(from) {
-  var levels  = ['rub', 'desig', 'dom'];
-  var start   = (from === 'cat') ? 0 : levels.indexOf(from);
-  if (start < 0) start = 0;
-  var defaults = {
-    rub:   '🔍 Rechercher une rubrique…',
-    desig: '🔍 Rechercher une désignation…',
-    dom:   '🔍 Rechercher par code ou libéllé…'
+function resetCascadeBelow(from) { resetBelow(from); }
+function resetBelow(from) {
+  // from: 'cat' -> efface rub+desig+dom
+  //       'rub' -> efface desig+dom (PAS rub)
+  //       'desig' -> efface dom seulement
+  var levels = ['rub', 'desig', 'dom'];
+  var start  = (from === 'cat') ? 0
+             : (from === 'rub') ? 1
+             : (from === 'desig') ? 2
+             : 0;
+  var ph = {
+    rub:   'Rechercher une rubrique…',
+    desig: 'Rechercher une désignation…',
+    dom:   'Rechercher par code ou libéllé…'
   };
   for (var i = start; i < levels.length; i++) {
     var k = levels[i];
     ssState[k] = null;
-    var valEl = ge(k+'-val'); if(valEl){ valEl.value=''; if(valEl.dataset) valEl.dataset.manual=''; }
-    var btnEl = ge('ss-'+k+'-btn');
-    if (btnEl) { btnEl.classList.remove('filled');
+    var valEl = ge(k + '-val');
+    if (valEl) { valEl.value = ''; if (valEl.dataset) valEl.dataset.manual = ''; }
+    var btnEl = ge('ss-' + k + '-btn');
+    if (btnEl) {
+      btnEl.classList.remove('filled');
       var t = btnEl.querySelector('.ss-txt');
-      if (t) t.textContent = defaults[k] || '🔍 Rechercher…'; }
-    var hintEl = ge('ss-'+k+'-hint');
-    if (hintEl){ hintEl.textContent=''; hintEl.className='hint'; }
+      if (t) t.textContent = ph[k] || 'Sélectionner…';
+    }
+    var hEl = ge('ss-' + k + '-hint');
+    if (hEl) { hEl.textContent = ''; hEl.className = 'hint'; }
   }
-  if (from === 'cat' || start === 0) { var rv = ge('rub-val'); if(rv) rv.value=''; }
+  // Effacer rub-val seulement si on repart de cat
+  if (from === 'cat') {
+    var rv = ge('rub-val'); if (rv) rv.value = '';
+  }
 }
 
 function selectCat(btn) {
-  [].forEach.call(document.querySelectorAll('.cat-btn'), function(b){ b.classList.remove('active'); });
+  [].forEach.call(document.querySelectorAll('.cat-btn'), function(b) { b.classList.remove('active'); });
   if (btn) btn.classList.add('active');
   var cat = btn ? btn.getAttribute('data-cat') : '';
-  var ci = ge('dom-cat'); if(ci) ci.value = cat;
-  var mr = ge('cat-manual-row'); if(mr) mr.classList.remove('show');
+  var ci = ge('dom-cat'); if (ci) ci.value = cat;
+  var mr = ge('cat-manual-row'); if (mr) mr.classList.remove('show');
   var hint = ge('cat-hint');
-  if(hint){ hint.textContent = '✔ '+cat; hint.className = 'hint ok'; }
-  resetCascadeBelow('cat');
-  toast('✔ '+cat);
+  if (hint) { hint.textContent = '✔ ' + cat; hint.className = 'hint ok'; }
+  // Reset toute la cascade sous catégorie
+  resetBelow('cat');
+  toast('✔ ' + cat);
 }
 
 
