@@ -746,7 +746,7 @@ function onOR(input) {
 // \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
 function saveKulanz() {
   G.kulanzData = {
-    site:        ge('f-site').value,
+    site:        ge('f-site') ? ge('f-site').value : '',
     chassis:     gv('chassis'),      kilometrage: gv('kilometrage'),
     or_number:   gv('or_number'),    date_or:     gv('date_or'),
     kvps:        gv('kvps'),         technicien:  gv('technicien'),
@@ -922,30 +922,30 @@ document.addEventListener('change', function(e) {
 // COLLECTE DES DONNÉES
 // \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
 function collectData() {
-  var site    = ge('f-site').value;
-  var type    = ge('f-type').value || 'Kulanz';
-  var domCode = ge('dom-val').value;
-  var domLbl  = ge('dom-lbl').value;
-  var avaCode = ge('ava-val').value;
-  var avaLbl  = ge('ava-lbl').value;
+  var site    = ge('f-site') ? ge('f-site').value : '';
+  var type    = ge('f-type') ? ge('f-type').value || 'Kulanz' : 'Kulanz';
+  var domCode = ge('dom-val') ? ge('dom-val').value : '';
+  var domLbl  = ge('dom-lbl') ? ge('dom-lbl').value : '';
+  var avaCode = ge('ava-val') ? ge('ava-val').value : '';
+  var avaLbl  = ge('ava-lbl') ? ge('ava-lbl').value : '';
   var domFull = domCode ? domCode + (domLbl ? ' — '+domLbl : '') : '';
   var avaFull = avaCode ? avaCode + (avaLbl ? ' — '+avaLbl : '') : '';
   var fields = [
+    { l:'N° OR',            v:gv('or_number') },
+    { l:'Date OR',          v:gv('date_or') },
+    { l:'KVPS',             v:gv('kvps') },
+    { l:'Nom du demandeur', v:gv('technicien') },
+    { l:'E-mail',           v:gv('email_usager') },
     { l:'Châssis',          v:gv('chassis') },
     { l:'Kilométrage',      v:gv('kilometrage') ? gv('kilometrage')+' km' : '' },
+    { l:'Plainte client',   v:gv('plainte_client') },
+    { l:'Catégorie',        v:(ge('dom-cat')?ge('dom-cat').value:'') },
+    { l:'Rubrique',         v:(ge('rub-val')?ge('rub-val').value:'') },
+    { l:'Désignation pièce', v:(ge('desig-val')?ge('desig-val').value:'') },
     { l:'Code dommage',     v:domFull },
     { l:'Code avarie',      v:avaFull },
     { l:'Emplacement',      v:gv('emplacement') },
     { l:'Référence pièce',  v:gv('ref_piece') },
-    { l:'Désignation pièce', v:(ge('desig-val')?ge('desig-val').value:'') },
-    { l:"Plainte client",   v:gv('plainte_client') },
-    { l:'Catégorie',        v:(ge('dom-cat')?ge('dom-cat').value:'') },
-    { l:'Rubrique',         v:(ge('rub-val')?ge('rub-val').value:'') },
-    { l:'N° OR',            v:gv('or_number') },
-    { l:"Date OR",          v:gv('date_or') },
-    { l:'KVPS',             v:gv('kvps') },
-    { l:'Nom du demandeur', v:gv('technicien') },
-    { l:'E-mail',           v:gv('email_usager') },
   ];
   if (type === 'Kulanz') {
     var brand2 = SITE_BRAND[site] || 'VW';
@@ -956,7 +956,7 @@ function collectData() {
     });
     fields = fields.concat(kFields);
   } else {
-    var pcs = Array.from(document.querySelectorAll('[name="pieces[]"]:checked')).map(function(el) { return el.value; });
+    var pcs = []; [].forEach.call(document.querySelectorAll('[name="pieces[]"]:checked'), function(el){ pcs.push(el.value); });
     fields = fields.concat([
       { l:'KULANZ effectuée', v:gr('kulanz_done') },
       { l:'CIG',              v:gr('cig') },
@@ -972,8 +972,8 @@ function collectData() {
 // ENVOYER
 // \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
 function envoyerFormulaire() {
-  var site  = ge('f-site').value;
-  var type  = ge('f-type') ? ge('f-type').value : 'Kulanz';
+  var site  = ge('f-site') ? ge('f-site').value : '';
+  var type  = (ge('f-type') && ge('f-type').value) ? ge('f-type').value : 'Kulanz';
   var isCCR = (type === 'CCR');
 
   if (!site) { alert('\u26a0 Veuillez s\u00e9lectionner un site.'); return; }
@@ -982,7 +982,7 @@ function envoyerFormulaire() {
   if (!gv('plainte_client')) { alert('\u26a0 Plainte client obligatoire.'); return; }
   if (!ge('desig-val') || !ge('desig-val').value) { alert('\u26a0 Veuillez s\u00e9lectionner une d\u00e9signation pi\u00e8ce.'); return; }
   if (!ge('dom-val') || !ge('dom-val').value) { alert('\u26a0 Veuillez s\u00e9lectionner un code dommage.'); return; }
-  if (!ge('ava-val').value) { alert('\u26a0 Veuillez s\u00e9lectionner un code avarie.'); return; }
+  if (!ge('ava-val') || !ge('ava-val').value) { alert('\u26a0 Veuillez s\u00e9lectionner un code avarie.'); return; }
   if (!gv('technicien')) { alert('\u26a0 Le nom du demandeur est obligatoire.'); return; }
   var email = gv('email_usager');
   if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) { alert('\u26a0 E-mail invalide.'); return; }
@@ -1018,11 +1018,14 @@ function envoyerFormulaire() {
       date: new Date().toLocaleDateString('fr-FR'),
       site: d.site, type: 'CCR',
       or: gv('or_number'), chassis: gv('chassis'), code_dommage: d.domFull,
+      desig_piece: ge('desig-val')?ge('desig-val').value:'',
+      rubrique: ge('rub-val')?ge('rub-val').value:'',
+      categorie: ge('dom-cat')?ge('dom-cat').value:'',
       email_usager: email, technicien: gv('technicien'),
       kilometrage: gv('kilometrage'), date_or: gv('date_or'), kvps: gv('kvps'),
       statut: 'En attente', commentaire_team: '', commerce: null
     };
-    if (demandesRef) demandesRef.child('d'+newD.id.replace(/[^a-zA-Z0-9]/g,'')).set(newD);
+    if (demandesRef) demandesRef.child('d'+newD.id.replace(/[^a-zA-Z0-9]/g,'')).set(newD).catch(function(e){console.warn('Firebase CCR:',e);});
     else G.demandes.unshift(newD);
     try { localStorage.removeItem('gea_draft'); } catch(e) {}
     ge('success-details').innerHTML =
@@ -1058,7 +1061,11 @@ function envoyerFormulaire() {
       id: Date.now()+'_'+Math.random().toString(36).slice(2,5),
       date: new Date().toLocaleDateString('fr-FR'),
       site: d.site, type: d.type, or: gv('or_number'), chassis: gv('chassis'),
-      code_dommage: d.domFull, email_usager: email, technicien: gv('technicien'),
+      code_dommage: d.domFull,
+      desig_piece: ge('desig-val')?ge('desig-val').value:'',
+      rubrique: ge('rub-val')?ge('rub-val').value:'',
+      categorie: ge('dom-cat')?ge('dom-cat').value:'',
+      email_usager: email, technicien: gv('technicien'),
       kilometrage: gv('kilometrage'), date_or: gv('date_or'), kvps: gv('kvps'),
       statut: 'En attente', commentaire_team: '', commerce: null
     };
@@ -1094,6 +1101,7 @@ function nouvelleDemande() {
   setType('K');
   var nok = ge('kulanz-nok-alert'); if(nok){ nok.classList.remove('show'); nok.innerHTML=''; }
   resetCat();
+  var _dci=ge('dom-cat'); if(_dci) _dci.value='';
   var kz=ge('kulanz-questions'); if(kz){[].forEach.call(kz.querySelectorAll('input[type=radio]'),function(r){r.checked=false;});}
   var tpif=ge('tpi-num-field'); if(tpif)tpif.style.display='none';
   var vw=ge('vendu-wrapper'); if(vw)vw.style.display='none';
