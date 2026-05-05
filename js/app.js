@@ -315,6 +315,12 @@ function setType(t) {
     var ct = ge('cig-taux'); if (ct) { ct.value = ''; ct.disabled = true; }
   }
   ge('btn-k').classList.toggle('active', isK);
+  // Afficher/cacher la case engagement CCR
+  var engWrap = ge('ccr-engagement-wrap');
+  if (engWrap) engWrap.style.display = isCCR ? 'block' : 'none';
+  // Réinitialiser la case si on change de type
+  var chkE = ge('chk-engagement');
+  if (chkE && !isCCR) chkE.checked = false;
   if (isK) {
     var curSite = ge('f-site') ? ge('f-site').value : '';
     if (curSite) renderKulanzForm(curSite);
@@ -1000,7 +1006,7 @@ function envoyerFormulaire() {
     try { genererPDF(); } catch(e) { console.warn('PDF:', e); }
     var corps = '\u2550'.repeat(40)+'\nDEMANDE CCR \u2014 '+site+'\n'+'\u2550'.repeat(40)+'\n\n';
     d.fields.filter(function(f){ return f.v; }).forEach(function(f){ corps += f.l+' : '+f.v+'\n'; });
-    corps += '\n'+'\u2500'.repeat(40)+'\n\u26a0 Joignez ce PDF + les documents justificatifs.\nTeam Garantie GEA \u2013 VW';
+    corps += '\n'+'\u2500'.repeat(40)+'\n\u2500'.repeat(40)+'\n\u26a0 ÉTAPES REQUISES :\n'+'  1. Téléchargez le PDF généré automatiquement (bouton ci-dessus).\n'+'  2. Joignez le formulaire \'Demande CCR\' (PDF) au mail Outlook.\n'+'  3. Joignez les documents justificatifs (factures, photos, plan entretien...).\n'+'  4. Envoyez depuis Outlook.\n'+'\nTeam Garantie GEA – VW';
     var kvps2   = gv('kvps') || site;
     var subject = 'Demande CCR - '+kvps2+' - '+site+' - '+gv('chassis')+' - '+gv('technicien');
     var mailto  = 'mailto:teamgarantie@geauto.fr'
