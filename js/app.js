@@ -184,7 +184,13 @@ function toast(msg) {
   t.classList.add('show');
   setTimeout(function() { if(ge('toast')) ge('toast').classList.remove('show'); }, 3200);
 }
-function isValidVIN(v) { return /^[A-HJ-NPR-Z0-9]{17}$/.test(v); }
+function isValidVIN(v) {
+  if (!v || v.length !== 17) return false;
+  if (!/^[A-HJ-NPR-Z0-9]{17}$/i.test(v)) return false;
+  // Vérification: pas 17 fois le même caractère (ex: ZZZZZZZZZZZZZZZZZ)
+  if (/^(.)+$/.test(v)) return false;
+  return true;
+}
 function vinHint(v) {
   if (!v) return '0 / 17 caractères';
   if (/[IOQ]/i.test(v)) return v.length+' / 17 — ⚠ I, O, Q interdits';
@@ -836,18 +842,21 @@ function saveDraft() {
       ?(KULANZ_BY_BRAND[SITE_BRAND[_s]||'VW']||[]):[];
     _q.forEach(function(q){b['k_'+q.name]=gr(q.name)||'';});
     b.num_tpi=gv('num_tpi')||'';
-    try { localStorage.setItem('gea_draft', JSON.stringify(b)); } catch(e) {}
+    try { var _draftKey = 'gea_draft_' + (_s || 'default');
+      localStorage.setItem(_draftKey, JSON.stringify(b));
+      localStorage.setItem('gea_draft_last', _draftKey); } catch(e) {}
   }, 700);
 }
 
 function restoreDraft() {
   try {
-    var s = localStorage.getItem('gea_draft');
+    var _lastKey = localStorage.getItem('gea_draft_last') || 'gea_draft';
+    var s = localStorage.getItem(_lastKey);
     if (!s) return;
     var b = JSON.parse(s);
     if (!b.chassis && !b.or_number) return;
     if (!confirm('📋 Un brouillon non envoyé a été trouvé. Restaurer ?')) {
-      localStorage.removeItem('gea_draft'); return;
+      (function(){ var _lk=localStorage.getItem('gea_draft_last')||'gea_draft';localStorage.removeItem(_lk);localStorage.removeItem('gea_draft_last');})(); return;
     }
     // Restaurer le site uniquement si valide
     if (b.site && SITES.indexOf(b.site) !== -1 && G.role === 'team') {
@@ -1013,9 +1022,12 @@ function envoyerFormulaire() {
     corps += '\n'+'\u2500'.repeat(40)+'\n\u2500'.repeat(40)+'\n\u26a0 ÉTAPES REQUISES :\n'+'  1. Téléchargez le PDF généré automatiquement (bouton ci-dessus).\n'+'  2. Joignez le formulaire \'Demande CCR\' (PDF) au mail Outlook.\n'+'  3. Joignez les documents justificatifs (factures, photos, plan entretien...).\n'+'  4. Envoyez depuis Outlook.\n'+'\nTeam Garantie GEA – VW';
     var kvps2   = gv('kvps') || site;
     var subject = 'Demande CCR - '+kvps2+' - '+site+' - '+gv('chassis')+' - '+gv('technicien');
+    var corpsLimite = corps.length > 1800
+      ? corps.substring(0, 1800) + '\n\n[...] CORPS TRONQUÉ — Joindre le PDF pour les détails complets.'
+      : corps;
     var mailto  = 'mailto:teamgarantie@geauto.fr'
                 + '?subject=' + encodeURIComponent(subject)
-                + '&body='    + encodeURIComponent(corps);
+                + '&body='    + encodeURIComponent(corpsLimite);
     window.location.href = mailto;
     var newD = {
       id: Date.now()+'_'+Math.random().toString(36).slice(2,5),
@@ -1031,7 +1043,7 @@ function envoyerFormulaire() {
     };
     if (demandesRef) demandesRef.child('d'+newD.id.replace(/[^a-zA-Z0-9]/g,'')).set(newD).catch(function(e){console.warn('Firebase CCR:',e);});
     else G.demandes.unshift(newD);
-    try { localStorage.removeItem('gea_draft'); } catch(e) {}
+    try { (function(){ var _lk=localStorage.getItem('gea_draft_last')||'gea_draft';localStorage.removeItem(_lk);localStorage.removeItem('gea_draft_last');})(); } catch(e) {}
     ge('success-details').innerHTML =
       '<strong>Site\u00a0:</strong> '+esc(newD.site)+'<br>'+
       '<strong>Type\u00a0:</strong> CCR<br>'+
@@ -1077,7 +1089,7 @@ function envoyerFormulaire() {
     G.demandes.unshift(newD2); return newD2;
   })
   .then(function(newD2){
-    try { localStorage.removeItem('gea_draft'); } catch(e) {}
+    try { (function(){ var _lk=localStorage.getItem('gea_draft_last')||'gea_draft';localStorage.removeItem(_lk);localStorage.removeItem('gea_draft_last');})(); } catch(e) {}
     ge('success-details').innerHTML =
       '<strong>Site\u00a0:</strong> '+esc(newD2.site)+'<br>'+
       '<strong>Type\u00a0:</strong> '+esc(newD2.type)+'<br>'+
