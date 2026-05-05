@@ -966,75 +966,111 @@ function collectData() {
 // ENVOYER
 // \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
 function envoyerFormulaire() {
-  var site = ge('f-site').value;
-  if (!site) { alert('⚠ Veuillez sélectionner un site.'); return; }
-  if (!isValidVIN(gv('chassis'))) { alert('⚠ Châssis invalide (17 caractères, pas I/O/Q).'); return; }
-  if (!/^\d{6}$/.test(gv('or_number'))) { alert('⚠ N° OR : 6 chiffres requis.'); return; }
-  if (!gv('plainte_client')) { alert('⚠ Plainte client obligatoire.'); return; }
-  if (!ge('desig-val') || !ge('desig-val').value) { alert('⚠ Veuillez sélectionner une désignation pièce.'); return; }
-  if (!ge('dom-val') || !ge('dom-val').value) { alert('⚠ Veuillez sélectionner un code dommage.'); return; }
-  if (!ge('ava-val').value) { alert('⚠ Veuillez sélectionner un code avarie.'); return; }
-  var email = gv('email_usager');
+  var site  = ge('f-site').value;
+  var type  = ge('f-type') ? ge('f-type').value : 'Kulanz';
+  var isCCR = (type === 'CCR');
+
+  if (!site) { alert('\u26a0 Veuillez s\u00e9lectionner un site.'); return; }
+  if (!isValidVIN(gv('chassis'))) { alert('\u26a0 Ch\u00e2ssis invalide (17 caract\u00e8res, pas I/O/Q).'); return; }
+  if (!/^\d{6}$/.test(gv('or_number'))) { alert('\u26a0 N\u00b0 OR\u00a0: 6 chiffres requis.'); return; }
+  if (!gv('plainte_client')) { alert('\u26a0 Plainte client obligatoire.'); return; }
+  if (!ge('desig-val') || !ge('desig-val').value) { alert('\u26a0 Veuillez s\u00e9lectionner une d\u00e9signation pi\u00e8ce.'); return; }
+  if (!ge('dom-val') || !ge('dom-val').value) { alert('\u26a0 Veuillez s\u00e9lectionner un code dommage.'); return; }
+  if (!ge('ava-val').value) { alert('\u26a0 Veuillez s\u00e9lectionner un code avarie.'); return; }
   if (!gv('technicien')) { alert('\u26a0 Le nom du demandeur est obligatoire.'); return; }
+  var email = gv('email_usager');
   if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) { alert('\u26a0 E-mail invalide.'); return; }
+  if (isCCR) {
+    var chkE = ge('chk-engagement');
+    if (!chkE || !chkE.checked) {
+      alert('\u26a0 Veuillez cocher la case d\u2019engagement avant d\u2019envoyer.');
+      if (chkE) chkE.focus();
+      return;
+    }
+  }
 
   var btn = ge('btn-envoyer');
   if (!btn || btn.disabled) return;
-  if (!confirm("Confirmer l'envoi ?\n\nSite : "+site+"\nN\u00b0 OR : "+gv('or_number')+"\nChassis : "+gv('chassis'))) return;
-
-  btn.disabled = true; btn.textContent = 'Envoi en cours…';
+  if (!confirm("Confirmer l'envoi ?\n\nSite\u00a0: "+site+"\nN\u00b0 OR\u00a0: "+gv('or_number')+"\nChassis\u00a0: "+gv('chassis'))) return;
 
   var d = collectData();
-  var msg = '\u2550'.repeat(48)+'\nDEMANDE '+d.type.toUpperCase()+' — '+d.site+'\n'+'\u2550'.repeat(48)+'\n\n';
-  d.fields.filter(function(f) { return f.v; }).forEach(function(f) { msg += f.l+' : '+f.v+'\n'; });
-  msg += '\n'+'\u2500'.repeat(48)+'\nTeam Garantie GEA – VW';
 
-  fetch('https://api.web3forms.com/submit', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      access_key: WEB3_KEY,
-      subject: '['+d.type+'] Nouvelle demande – '+d.site+' – OR '+gv('or_number'),
-      message: msg,
-      from_name: gv('technicien') || d.site,
-      replyto: email
-    })
-  })
-  .then(function(r) { return r.json(); })
-  .then(function(res) {
-    if (!res.success) throw new Error('web3forms error');
+  if (isCCR) {
+    btn.disabled = true; btn.textContent = 'Pr\u00e9paration\u2026';
+    try { genererPDF(); } catch(e) { console.warn('PDF:', e); }
+    var corps = '\u2550'.repeat(40)+'\nDEMANDE CCR \u2014 '+site+'\n'+'\u2550'.repeat(40)+'\n\n';
+    d.fields.filter(function(f){ return f.v; }).forEach(function(f){ corps += f.l+' : '+f.v+'\n'; });
+    corps += '\n'+'\u2500'.repeat(40)+'\n\u26a0 Joignez ce PDF + les documents justificatifs.\nTeam Garantie GEA \u2013 VW';
+    var kvps2   = gv('kvps') || site;
+    var subject = 'Demande CCR - '+kvps2+' - '+site+' - '+gv('chassis')+' - '+gv('technicien');
+    var mailto  = 'mailto:teamgarantie@geauto.fr'
+                + '?subject=' + encodeURIComponent(subject)
+                + '&body='    + encodeURIComponent(corps);
+    window.location.href = mailto;
     var newD = {
       id: Date.now()+'_'+Math.random().toString(36).slice(2,5),
       date: new Date().toLocaleDateString('fr-FR'),
-      site: d.site, type: d.type,
-      or: gv('or_number'), chassis: gv('chassis'),
-      code_dommage: d.domFull,
-      email_usager: email,
-      technicien: gv('technicien'),
+      site: d.site, type: 'CCR',
+      or: gv('or_number'), chassis: gv('chassis'), code_dommage: d.domFull,
+      email_usager: email, technicien: gv('technicien'),
       kilometrage: gv('kilometrage'), date_or: gv('date_or'), kvps: gv('kvps'),
       statut: 'En attente', commentaire_team: '', commerce: null
     };
-    if (demandesRef) {
-      return demandesRef.child('d'+newD.id.replace(/[^a-zA-Z0-9]/g,'')).set(newD).then(function() { return newD; });
-    }
-    G.demandes.unshift(newD);
-    return newD;
-  })
-  .then(function(newD) {
+    if (demandesRef) demandesRef.child('d'+newD.id.replace(/[^a-zA-Z0-9]/g,'')).set(newD);
+    else G.demandes.unshift(newD);
     try { localStorage.removeItem('gea_draft'); } catch(e) {}
     ge('success-details').innerHTML =
-      '<strong>Site :</strong> '+esc(newD.site)+'<br>'+
-      '<strong>Type :</strong> '+esc(newD.type)+'<br>'+
-      '<strong>N° OR :</strong> '+esc(newD.or)+'<br>'+
-      '<strong>Châssis :</strong> '+esc(newD.chassis)+'<br>'+
-      '<strong>E-mail :</strong> '+esc(newD.email_usager);
+      '<strong>Site\u00a0:</strong> '+esc(newD.site)+'<br>'+
+      '<strong>Type\u00a0:</strong> CCR<br>'+
+      '<strong>N\u00b0 OR\u00a0:</strong> '+esc(newD.or)+'<br>'+
+      '<strong>Ch\u00e2ssis\u00a0:</strong> '+esc(newD.chassis)+'<br>'+
+      '<strong>\u2139 Outlook ouvert \u2014 joignez le PDF avant d\u2019envoyer.</strong>';
+    ge('success-overlay').classList.add('open');
+    setTimeout(function(){
+      btn.disabled = false;
+      btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><path d="M22 2L11 13"/><path d="M22 2L15 22 11 13 2 9l20-7z"/></svg> Envoyer la demande';
+    }, 2000);
+    return;
+  }
+
+  btn.disabled = true; btn.textContent = 'Envoi en cours\u2026';
+  var msg = '\u2550'.repeat(40)+'\nDEMANDE '+d.type.toUpperCase()+' \u2014 '+d.site+'\n'+'\u2550'.repeat(40)+'\n\n';
+  d.fields.filter(function(f){ return f.v; }).forEach(function(f){ msg += f.l+' : '+f.v+'\n'; });
+  msg += '\n'+'\u2500'.repeat(40)+'\nTeam Garantie GEA \u2013 VW';
+  fetch('https://api.web3forms.com/submit', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({
+      access_key: WEB3_KEY,
+      subject: '['+d.type+'] Nouvelle demande \u2013 '+d.site+' \u2013 OR '+gv('or_number'),
+      message: msg, from_name: gv('technicien')||d.site, replyto: email
+    })
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(res){
+    if (!res.success) throw new Error('web3forms error');
+    var newD2 = {
+      id: Date.now()+'_'+Math.random().toString(36).slice(2,5),
+      date: new Date().toLocaleDateString('fr-FR'),
+      site: d.site, type: d.type, or: gv('or_number'), chassis: gv('chassis'),
+      code_dommage: d.domFull, email_usager: email, technicien: gv('technicien'),
+      kilometrage: gv('kilometrage'), date_or: gv('date_or'), kvps: gv('kvps'),
+      statut: 'En attente', commentaire_team: '', commerce: null
+    };
+    if (demandesRef) return demandesRef.child('d'+newD2.id.replace(/[^a-zA-Z0-9]/g,'')).set(newD2).then(function(){ return newD2; });
+    G.demandes.unshift(newD2); return newD2;
+  })
+  .then(function(newD2){
+    try { localStorage.removeItem('gea_draft'); } catch(e) {}
+    ge('success-details').innerHTML =
+      '<strong>Site\u00a0:</strong> '+esc(newD2.site)+'<br>'+
+      '<strong>Type\u00a0:</strong> '+esc(newD2.type)+'<br>'+
+      '<strong>N\u00b0 OR\u00a0:</strong> '+esc(newD2.or)+'<br>'+
+      '<strong>Ch\u00e2ssis\u00a0:</strong> '+esc(newD2.chassis)+'<br>'+
+      '<strong>E-mail\u00a0:</strong> '+esc(newD2.email_usager);
     ge('success-overlay').classList.add('open');
   })
-  .catch(function(err) {
-    console.error(err);
-    toast("❌ Erreur lors de l'envoi - réessayez.");
-  })
-  .finally(function() {
+  .catch(function(err){ console.error(err); toast('\u274c Erreur \u2013 r\u00e9essayez.'); })
+  .finally(function(){
     btn.disabled = false;
     btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><path d="M22 2L11 13"/><path d="M22 2L15 22 11 13 2 9l20-7z"/></svg> Envoyer la demande';
   });
