@@ -406,6 +406,18 @@
     </div>
 
     <div class="submit-area">
+      <!-- Case engagement CCR (affichée seulement pour CCR) -->
+      <div id="ccr-engagement-wrap" style="display:none;margin-bottom:12px">
+        <label class="chk-item" style="border:1.5px solid var(--gold);border-radius:8px;padding:12px 14px;background:rgba(184,148,75,.06);display:flex;gap:10px;align-items:flex-start;cursor:pointer">
+          <input type="checkbox" id="chk-engagement" name="chk_engagement" style="margin-top:3px;flex-shrink:0">
+          <span style="font-size:13px;line-height:1.5">
+            <strong>Je m’engage</strong> à joindre le formulaire
+            <em>« Demande CCR »</em> ainsi que les documents
+            justificatifs nécessaires pour valider ma demande.
+            <span style="color:var(--red)">&nbsp;*</span>
+          </span>
+        </label>
+      </div>
       <p class="submit-note">En soumettant, le formulaire sera envoyé à <strong>teamgarantie@geauto.fr</strong></p>
       <div class="btn-row">
         <button type="button" class="btn-primary" id="btn-envoyer" onclick="envoyerFormulaire()">
