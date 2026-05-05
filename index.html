@@ -42,7 +42,9 @@
         <div class="lp-site" onclick="loginUsager('Audi Hœnheim')">Audi Hœnheim</div>
         <div class="lp-site" onclick="loginUsager('Audi Obernai')">Audi Obernai</div>
         <div class="lp-site" onclick="loginUsager('SEAT Hœnheim')">SEAT Hœnheim</div>
+        <div class="lp-site" onclick="loginUsager('SEAT Illkirch')">SEAT Illkirch</div>
         <div class="lp-site" onclick="loginUsager('SKODA Hœnheim')">SKODA Hœnheim</div>
+        <div class="lp-site" onclick="loginUsager('SKODA Obernai')">SKODA Obernai</div>
         <div class="lp-site" onclick="loginUsager('VW Bischheim')">VW Bischheim</div>
         <div class="lp-site" onclick="loginUsager('VW Illkirch')">VW Illkirch</div>
         <div class="lp-site span2" onclick="loginUsager('VW Obernai')">VW Obernai</div>
@@ -229,8 +231,8 @@
             <label>Rubrique <span class="req">*</span></label>
             <input type="hidden" id="rub-val" name="rubrique_dommage">
             <div class="ss-wrap" id="ss-rub">
-              <button type="button" class="ss-btn" id="ss-rub-btn" onclick="ssToggle('rub')" disabled>
-                <span class="ss-txt" id="ss-rub-txt">↑ Sélectionnez d’abord une catégorie…</span>
+              <button type="button" class="ss-btn" id="ss-rub-btn" onclick="ssToggle('rub')">
+                <span class="ss-txt" id="ss-rub-txt">🔍 Rechercher une rubrique…</span>
                 <span class="ss-arr">▼</span>
               </button>
               <div class="ss-drop" id="ss-rub-drop">
@@ -251,8 +253,8 @@
             <label>Désignation pièce <span class="req">*</span></label>
             <div class="ss-wrap" id="ss-desig">
               <input type="hidden" id="desig-val" name="desig_piece">
-              <button type="button" class="ss-btn" id="ss-desig-btn" onclick="ssToggle('desig')" disabled>
-                <span class="ss-txt" id="ss-desig-txt">↑ Sélectionnez d’abord une rubrique…</span>
+              <button type="button" class="ss-btn" id="ss-desig-btn" onclick="ssToggle('desig')">
+                <span class="ss-txt" id="ss-desig-txt">🔍 Rechercher une désignation…</span>
                 <span class="ss-arr">▼</span>
               </button>
               <div class="ss-drop" id="ss-desig-drop">
@@ -275,8 +277,8 @@
             <div class="ss-wrap" id="ss-dom">
               <input type="hidden" id="dom-val" name="code_dommage">
               <input type="hidden" id="dom-lbl" name="code_dommage_label">
-              <button type="button" class="ss-btn" id="ss-dom-btn" onclick="ssToggle('dom')" disabled>
-                <span class="ss-txt" id="ss-dom-txt">↑ Choisir désignation d’abord…</span>
+              <button type="button" class="ss-btn" id="ss-dom-btn" onclick="ssToggle('dom')">
+                <span class="ss-txt" id="ss-dom-txt">🔍 Rechercher par code ou libéllé…</span>
                 <span class="ss-arr">▼</span>
               </button>
               <div class="ss-drop" id="ss-dom-drop">
