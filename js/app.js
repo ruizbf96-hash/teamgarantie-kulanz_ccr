@@ -1039,10 +1039,19 @@ function envoyerFormulaire() {
     var mailto  = 'mailto:teamgarantie@geauto.fr'
                 + '?subject=' + encodeURIComponent(subject)
                 + '&body='    + encodeURIComponent(corpsLimite);
-    // Ouvrir Outlook — window.open est plus fiable que location.href
-    var mailOpened = false;
-    try { window.open(mailto, '_blank'); mailOpened = true; } catch(e) {}
-    if (!mailOpened) { window.location.href = mailto; }
+    // Ouvrir Outlook — méthode universelle Chrome/Firefox/Edge
+    // createElement + click = jamais bloqué car c'est un geste utilisateur direct
+    try {
+      var _a = document.createElement('a');
+      _a.href = mailto;
+      _a.style.display = 'none';
+      document.body.appendChild(_a);
+      _a.click();
+      setTimeout(function(){ document.body.removeChild(_a); }, 500);
+    } catch(e) {
+      // Fallback si createElement échoue
+      window.location.href = mailto;
+    }
     var newD = {
       id: Date.now()+'_'+Math.random().toString(36).slice(2,5),
       date: new Date().toLocaleDateString('fr-FR'),
