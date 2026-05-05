@@ -20,7 +20,7 @@ var SITE_BRAND = {
 
 var KULANZ_BY_BRAND = {
   'VW': [
-    {name:'tpi',             label:"Y a-t-il une TPI ?",                                              nok:null},
+    {name:'tpi',             label:"Y a-t-il une TPI ?",                                              nok:'NON', info:"TPI manquante"},
     {name:'opteven',         label:"Garantie OPTEVEN visible dans ELSA ?",                            nok:null},
     {name:'tuning',          label:"Code tuning dans SAGA ?",                                         nok:'OUI', info:"Code tuning détecté → NOK"},
     {name:'piece_usure',     label:"La pièce concernée est une pièce d'usure ?",       nok:'OUI', info:"Pièce d'usure non couverte"},
@@ -31,7 +31,7 @@ var KULANZ_BY_BRAND = {
     {name:'lien_entretien',  label:"Un lien peut être établi entre la cause du dommage et l'entretien ?", nok:'OUI', info:"Lien dommage/entretien détecté"}
   ],
   'Audi': [
-    {name:'tpi',             label:"Y a-t-il une TPI ?",                                              nok:null},
+    {name:'tpi',             label:"Y a-t-il une TPI ?",                                              nok:'NON', info:"TPI manquante"},
     {name:'opteven',         label:"Garantie OPTEVEN visible dans ELSA ?",                            nok:null},
     {name:'tuning',          label:"Code tuning dans SAGA ?",                                         nok:'OUI', info:"Code tuning détecté → NOK"},
     {name:'piece_usure',     label:"La pièce concernée est une pièce d'usure ?",       nok:'OUI', info:"Pièce d'usure non couverte"},
@@ -42,7 +42,7 @@ var KULANZ_BY_BRAND = {
     {name:'lien_entretien',  label:"Un lien peut être établi entre la cause du dommage et l'entretien ?", nok:'OUI', info:"Lien dommage/entretien détecté"}
   ],
   'SEAT': [
-    {name:'tpi',             label:"Y a-t-il une TPI ?",                                              nok:null},
+    {name:'tpi',             label:"Y a-t-il une TPI ?",                                              nok:'NON', info:"TPI manquante"},
     {name:'opteven',         label:"Garantie OPTEVEN visible dans ELSA ?",                            nok:null},
     {name:'tuning',          label:"Code tuning dans SAGA ?",                                         nok:'OUI', info:"Code tuning détecté → NOK"},
     {name:'piece_usure',     label:"La pièce concernée est une pièce d'usure ?",       nok:'OUI', info:"Pièce d'usure non couverte"},
@@ -53,7 +53,7 @@ var KULANZ_BY_BRAND = {
     {name:'lien_entretien',  label:"Un lien peut être établi entre la cause du dommage et l'entretien ?", nok:'OUI', info:"Lien dommage/entretien détecté"}
   ],
   'SKODA': [
-    {name:'tpi',             label:"Y a-t-il une TPI ?",                                              nok:null},
+    {name:'tpi',             label:"Y a-t-il une TPI ?",                                              nok:'NON', info:"TPI manquante"},
     {name:'opteven',         label:"Garantie OPTEVEN visible dans ELSA ?",                            nok:null},
     {name:'tuning',          label:"Code tuning dans SAGA ?",                                         nok:'OUI', info:"Code tuning détecté → NOK"},
     {name:'piece_usure',     label:"La pièce concernée est une pièce d'usure ?",       nok:'OUI', info:"Pièce d'usure non couverte"},
@@ -317,237 +317,63 @@ var ssState = { dom: null, ava: null, desig: null, rub: null };
 
 function ssData(key) {
   if (key === 'ava') return CODES_AVA;
+  var cat    = ge('dom-cat')   ? ge('dom-cat').value   : '';
+  var rubVal = ge('rub-val')   ? ge('rub-val').value   : '';
+  var desigV = ge('desig-val') ? ge('desig-val').value : '';
 
   if (key === 'rub') {
-    var cat = ge('dom-cat') ? ge('dom-cat').value : '';
-    // Avec catégorie sélectionnée : filtrer — sinon : tout afficher
     var rubs = (cat && CAT_RUBS[cat]) ? CAT_RUBS[cat] : Object.keys(RUB_LABELS);
     return rubs.map(function(r){ return {code:r, label:r}; });
   }
-
   if (key === 'desig') {
-    var rubVal = ge('rub-val') ? ge('rub-val').value : '';
-    // Avec rubrique : filtrer — sinon : tous les libellés uniques
-    var labels;
+    var labels = [];
     if (rubVal && RUB_LABELS[rubVal]) {
       labels = RUB_LABELS[rubVal];
+    } else if (cat && CAT_RUBS[cat]) {
+      var sv = {};
+      CAT_RUBS[cat].forEach(function(rub) {
+        (RUB_LABELS[rub]||[]).forEach(function(l){ if(!sv[l]){sv[l]=true;labels.push(l);} });
+      });
     } else {
-      // Tous les libellés uniques de toutes les rubriques
-      var seen = {};
-      labels = [];
+      var sv2 = {};
       Object.values(RUB_LABELS).forEach(function(arr) {
-        arr.forEach(function(l) { if (!seen[l]) { seen[l] = true; labels.push(l); } });
+        arr.forEach(function(l){ if(!sv2[l]){sv2[l]=true;labels.push(l);} });
       });
     }
     return labels.map(function(l){ return {code:l, label:l}; });
   }
-
   if (key === 'dom') {
-    var rubVal2  = ge('rub-val')   ? ge('rub-val').value   : '';
-    var desigVal = ge('desig-val') ? ge('desig-val').value : '';
-    if (rubVal2 && desigVal) {
-      var k = rubVal2 + '|||' + desigVal;
-      var codes = RUB_LABEL_CODES[k] || [];
-      return codes.map(function(c){ return {code:c, label:desigVal}; });
-    }
-    if (desigVal) {
-      var found = [];
-      Object.keys(RUB_LABEL_CODES).forEach(function(k2) {
-        if (k2.split('|||')[1] === desigVal) found = found.concat(RUB_LABEL_CODES[k2]);
+    if (rubVal && desigV) {
+      var k = rubVal+'|||'+desigV;
+      var codes = RUB_LABEL_CODES[k]||[];
+      if (!codes.length) Object.keys(RUB_LABEL_CODES).forEach(function(k2){
+        if(k2.split('|||')[1]===desigV) codes=codes.concat(RUB_LABEL_CODES[k2]);
       });
-      return found.map(function(c){ return {code:c, label:desigVal}; });
+      return codes.map(function(c){ return {code:c,label:desigV}; });
     }
-    // Pas de désignation — liste tous les codes pour recherche libre
-    var allCodes = [];
-    var seenCodes = {};
-    Object.keys(RUB_LABEL_CODES).forEach(function(k3) {
-      var label3 = k3.split('|||')[1];
-      RUB_LABEL_CODES[k3].forEach(function(c) {
-        if (!seenCodes[c]) { seenCodes[c] = true; allCodes.push({code:c, label:label3}); }
+    if (desigV) {
+      var fd=[]; Object.keys(RUB_LABEL_CODES).forEach(function(k3){
+        if(k3.split('|||')[1]===desigV) fd=fd.concat(RUB_LABEL_CODES[k3]);
+      });
+      fd=fd.filter(function(c,i){return fd.indexOf(c)===i;});
+      return fd.map(function(c){return{code:c,label:desigV};});
+    }
+    var rubsScope = rubVal?[rubVal]:(cat&&CAT_RUBS[cat]?CAT_RUBS[cat]:Object.keys(RUB_LABELS));
+    var ac=[]; var sc={};
+    rubsScope.forEach(function(rub){
+      Object.keys(RUB_LABEL_CODES).forEach(function(k4){
+        if(k4.split('|||')[0]===rub){
+          var l4=k4.split('|||')[1];
+          RUB_LABEL_CODES[k4].forEach(function(c){if(!sc[c]){sc[c]=true;ac.push({code:c,label:l4});}});
+        }
       });
     });
-    // Trier par code numérique
-    allCodes.sort(function(a,b){ return parseInt(a.code) - parseInt(b.code); });
-    return allCodes;
+    ac.sort(function(a,b){return parseInt(a.code)-parseInt(b.code);});
+    return ac;
   }
   return [];
 }
 
-
-function ssRender(key, query) {
-  var items = ssData(key);
-  var q = (query||'').toLowerCase().trim();
-  var filtered;
-  if (!q) {
-    filtered = items;
-  } else if (key === 'dom') {
-    // Recherche par code (commence par) OU par label (contient)
-    filtered = items.filter(function(it) {
-      return it.code.toLowerCase().indexOf(q) === 0 ||
-             it.label.toLowerCase().indexOf(q) !== -1;
-    });
-  } else {
-    filtered = items.filter(function(it) {
-      return it.label.toLowerCase().indexOf(q) !== -1;
-    });
-  }
-  var shown = filtered.slice(0, 200);
-  var cnt = ge('ss-'+key+'-cnt');
-  if (cnt) cnt.textContent = filtered.length + ' r\u00e9sultat' + (filtered.length!==1?'s':'') + (filtered.length>200?' \u2014 200 affich\u00e9s':'');
-  var opts = ge('ss-'+key+'-opts');
-  if (!opts) return;
-  if (!shown.length) { opts.innerHTML = '<div class="ss-empty">Aucun r\u00e9sultat</div>'; return; }
-  var cur = ssState[key] ? ssState[key].code : '';
-  opts.innerHTML = shown.map(function(it) {
-    var sel = it.code === cur ? ' sel' : '';
-    var display;
-    if (key === 'dom') {
-      display = '<span class="ss-code" style="font-size:13px;font-weight:700">' + esc(it.code) + '</span>'
-              + '<span class="ss-lbl" style="color:#888;font-size:11px;margin-left:8px">' + esc(it.label) + '</span>';
-    } else if (key === 'ava') {
-      display = '<span class="ss-code">' + esc(it.code) + '</span><span class="ss-lbl">' + esc(it.label) + '</span>';
-    } else {
-      display = '<span class="ss-lbl">' + esc(it.label) + '</span>';
-    }
-    return '<div class="ss-opt'+sel+'" data-code="'+esc(it.code)+'" data-label="'+esc(it.label)+'" data-key="'+key+'" onclick="ssPickFromEl(this)">'+display+'</div>';
-  }).join('');
-}
-
-
-function ssPickFromEl(el) {
-  var code  = el.getAttribute('data-code');
-  var label = el.getAttribute('data-label');
-  var key   = el.getAttribute('data-key');
-  ssPick(key, code, label);
-}
-
-
-function fillCascadeFromCode(code, desigLabel) {
-  // Trouver rubrique + catégorie pour ce code
-  var foundRub = '', foundCat = '';
-  Object.keys(RUB_LABEL_CODES).forEach(function(k) {
-    if (RUB_LABEL_CODES[k].indexOf(code) !== -1 && !foundRub) {
-      foundRub = k.split('|||')[0];
-    }
-  });
-  if (foundRub) {
-    Object.keys(CAT_RUBS).forEach(function(cat) {
-      if (CAT_RUBS[cat].indexOf(foundRub) !== -1) foundCat = cat;
-    });
-  }
-  // Remplir désignation si vide
-  var dv = ge('desig-val');
-  if (dv && !dv.value && desigLabel) {
-    dv.value = desigLabel;
-    ssState['desig'] = { code: desigLabel, label: desigLabel };
-    var dBtn = ge('ss-desig-btn');
-    if (dBtn) { dBtn.classList.add('filled');
-      var dt = dBtn.querySelector('.ss-txt'); if(dt) dt.textContent = desigLabel; }
-    var dh = ge('ss-desig-hint');
-    if(dh){ dh.textContent = '\u2714 '+desigLabel; dh.className = 'hint ok'; }
-  }
-  // Remplir rubrique si vide
-  if (foundRub) {
-    var rv = ge('rub-val');
-    if (rv && !rv.value) {
-      rv.value = foundRub;
-      ssState['rub'] = { code: foundRub, label: foundRub };
-      var rBtn = ge('ss-rub-btn');
-      if(rBtn){ rBtn.classList.add('filled');
-        var rt = rBtn.querySelector('.ss-txt'); if(rt) rt.textContent = foundRub; }
-      var rh = ge('ss-rub-hint');
-      if(rh){ rh.textContent = '\u2714 '+foundRub; rh.className = 'hint ok'; }
-    }
-  }
-  // Remplir catégorie si vide
-  if (foundCat) {
-    var ci = ge('dom-cat');
-    if (ci && !ci.value) {
-      ci.value = foundCat;
-      document.querySelectorAll('.cat-btn').forEach(function(b){
-        b.classList.toggle('active', b.getAttribute('data-cat') === foundCat);
-      });
-      var ch = ge('cat-hint');
-      if(ch){ ch.textContent = '\u2714 '+foundCat; ch.className = 'hint ok'; }
-    }
-  }
-}
-
-
-
-function ssRenderSoft(key) {
-  // Rafraîchit les options du dropdown sans effacer la valeur sélectionnée
-  var curState = ssState[key];
-  var drop = ge('ss-'+key+'-drop');
-  if (drop && drop.classList.contains('open')) {
-    // Dropdown ouvert → re-render avec la query actuelle
-    var inp = ge('ss-'+key+'-inp');
-    ssRender(key, inp ? inp.value : '');
-  }
-  // Si pas ouvert, ne rien faire — les données seront rechargées à la prochaine ouverture
-}
-
-function ssPick(key, code, label) {
-  var cleanLabel = decodeLabel(label);
-  ssState[key] = { code: code, label: cleanLabel };
-  var valEl = ge(key+'-val'); if(valEl) valEl.value = code;
-  var lblEl = ge(key+'-lbl'); if(lblEl) lblEl.value = cleanLabel;
-  var txt  = ge('ss-'+key+'-txt');
-  var btn  = ge('ss-'+key+'-btn');
-  if (btn) btn.classList.add('filled');
-  var hint = ge('ss-'+key+'-hint');
-
-  if (key === 'rub') {
-    if (txt)  txt.textContent  = cleanLabel;
-    if (hint) { hint.textContent = '\u2714 ' + cleanLabel; hint.className = 'hint ok'; }
-    var rv = ge('rub-val'); if(rv) rv.value = cleanLabel;
-    // Rafraîchir désignation ET code avec le nouveau filtre — sans effacer les sélections
-    ssRenderSoft('desig');
-    ssRenderSoft('dom');
-
-  } else if (key === 'desig') {
-    if (txt)  txt.textContent  = cleanLabel;
-    if (hint) { hint.textContent = '\u2714 ' + cleanLabel; hint.className = 'hint ok'; }
-    var dv = ge('desig-val'); if(dv) dv.value = cleanLabel;
-    // Chercher les codes pour cette désignation et auto-sélectionner si 1 seul
-    var rubVal = ge('rub-val') ? ge('rub-val').value : '';
-    var k = rubVal + '|||' + cleanLabel;
-    var codes = RUB_LABEL_CODES[k] || [];
-    if (!codes.length) {
-      Object.keys(RUB_LABEL_CODES).forEach(function(k2) {
-        if (k2.split('|||')[1] === cleanLabel) codes = codes.concat(RUB_LABEL_CODES[k2]);
-      });
-    }
-    // Dédupliquer
-    codes = codes.filter(function(c,i){ return codes.indexOf(c)===i; });
-    var domBtn = ge('ss-dom-btn');
-    if (domBtn) {
-      domBtn.classList.remove('filled');
-      var dt = domBtn.querySelector('.ss-txt');
-      if (dt) dt.textContent = codes.length === 1
-        ? codes[0]
-        : '\U0001F50D ' + codes.length + ' code(s) \u2014 s\u00e9lectionnez\u2026';
-    }
-    ssRenderSoft('dom');
-    if (codes.length === 1) { setTimeout(function(){ ssPick('dom', codes[0], cleanLabel); }, 50); }
-
-  } else if (key === 'dom') {
-    if (txt)  txt.textContent = code;
-    if (hint) { hint.textContent = '\u2714 ' + code; hint.className = 'hint ok'; }
-    // Cascade inverse : remplir désig + rub + cat SEULEMENT si pas déjà remplis
-    fillCascadeFromCode(code, cleanLabel);
-
-  } else if (key === 'ava') {
-    if (txt)  txt.textContent = code + ' \u2014 ' + cleanLabel;
-    if (hint) { hint.textContent = '\u2714 ' + cleanLabel; hint.className = 'hint ok'; }
-
-  } else {
-    if (txt)  txt.textContent = code + ' \u2014 ' + cleanLabel;
-    if (hint) { hint.textContent = '\u2714 ' + cleanLabel; hint.className = 'hint ok'; }
-  }
-  ssClose();
-  saveDraft();
-}
 
 
 function ssClear(key) {
@@ -618,6 +444,143 @@ function ssClose() {
     if (b) b.classList.remove('open');
   });
 }
+
+function ssPickFromEl(el) {
+  var code  = el.getAttribute('data-code');
+  var label = el.getAttribute('data-label');
+  var key   = el.getAttribute('data-key');
+  if (code && key) ssPick(key, code, label || '');
+}
+
+function ssRenderSoft(key) {
+  var drop = ge('ss-'+key+'-drop');
+  if (drop && drop.classList.contains('open')) {
+    var inp = ge('ss-'+key+'-inp');
+    ssRender(key, inp ? inp.value : '');
+  }
+}
+
+function ssRender(key, query) {
+  var items = ssData(key);
+  var q = (query||'').toLowerCase().trim();
+  var filtered;
+  if (!q) {
+    filtered = items;
+  } else if (key === 'dom') {
+    filtered = items.filter(function(it) {
+      return it.code.toLowerCase().indexOf(q) === 0 ||
+             it.label.toLowerCase().indexOf(q) !== -1;
+    });
+  } else {
+    filtered = items.filter(function(it) {
+      return it.label.toLowerCase().indexOf(q) !== -1;
+    });
+  }
+  var shown = filtered.slice(0, 200);
+  var cnt = ge('ss-'+key+'-cnt');
+  if (cnt) cnt.textContent = filtered.length + ' r\u00e9sultat' + (filtered.length!==1?'s':'') + (filtered.length>200?' \u2014 200 affich\u00e9s':'');
+  var opts = ge('ss-'+key+'-opts');
+  if (!opts) return;
+  if (!shown.length) { opts.innerHTML = '<div class="ss-empty">Aucun r\u00e9sultat</div>'; return; }
+  var cur = ssState[key] ? ssState[key].code : '';
+  opts.innerHTML = shown.map(function(it) {
+    var sel = it.code === cur ? ' sel' : '';
+    var display;
+    if (key === 'dom') {
+      display = '<span class="ss-code" style="font-size:13px;font-weight:700">' + esc(it.code) + '</span>'
+              + '<span class="ss-lbl" style="color:#888;font-size:11px;margin-left:8px">' + esc(it.label) + '</span>';
+    } else if (key === 'ava') {
+      display = '<span class="ss-code">' + esc(it.code) + '</span><span class="ss-lbl">' + esc(it.label) + '</span>';
+    } else {
+      display = '<span class="ss-lbl">' + esc(it.label) + '</span>';
+    }
+    return '<div class="ss-opt'+sel+'" data-code="'+esc(it.code)+'" data-label="'+esc(it.label)+'" data-key="'+key+'" onclick="ssPickFromEl(this)">'+display+'</div>';
+  }).join('');
+}
+
+function ssPick(key, code, label) {
+  var cleanLabel = decodeLabel(label);
+  ssState[key] = { code: code, label: cleanLabel };
+  var valEl = ge(key+'-val'); if(valEl) valEl.value = code;
+  var lblEl = ge(key+'-lbl'); if(lblEl) lblEl.value = cleanLabel;
+  var txt  = ge('ss-'+key+'-txt');
+  var btn  = ge('ss-'+key+'-btn');
+  if (btn) btn.classList.add('filled');
+  var hint = ge('ss-'+key+'-hint');
+
+  if (key === 'rub') {
+    if (txt)  txt.textContent = cleanLabel;
+    if (hint) { hint.textContent = '\u2714 ' + cleanLabel; hint.className = 'hint ok'; }
+    var rv = ge('rub-val'); if(rv) rv.value = cleanLabel;
+    resetCascadeBelow('rub');
+
+  } else if (key === 'desig') {
+    if (txt)  txt.textContent = cleanLabel;
+    if (hint) { hint.textContent = '\u2714 ' + cleanLabel; hint.className = 'hint ok'; }
+    var dv = ge('desig-val'); if(dv) dv.value = cleanLabel;
+    var rubVal = ge('rub-val') ? ge('rub-val').value : '';
+    var k = rubVal + '|||' + cleanLabel;
+    var codes = RUB_LABEL_CODES[k] || [];
+    if (!codes.length) {
+      Object.keys(RUB_LABEL_CODES).forEach(function(k2) {
+        if (k2.split('|||')[1] === cleanLabel) codes = codes.concat(RUB_LABEL_CODES[k2]);
+      });
+    }
+    codes = codes.filter(function(c,i){ return codes.indexOf(c)===i; });
+    var domBtn = ge('ss-dom-btn');
+    if (domBtn) {
+      domBtn.classList.remove('filled');
+      var dt = domBtn.querySelector('.ss-txt');
+      if (dt) dt.textContent = codes.length===1 ? codes[0] : '\U0001F50D '+codes.length+' code(s) \u2014 s\u00e9lectionnez\u2026';
+    }
+    if (codes.length===1) { setTimeout(function(){ ssPick('dom', codes[0], cleanLabel); }, 50); }
+
+  } else if (key === 'dom') {
+    if (txt)  txt.textContent = code;
+    if (hint) { hint.textContent = '\u2714 ' + code; hint.className = 'hint ok'; }
+    fillCascadeFromCode(code, cleanLabel);
+
+  } else if (key === 'ava') {
+    if (txt)  txt.textContent = code + ' \u2014 ' + cleanLabel;
+    if (hint) { hint.textContent = '\u2714 ' + cleanLabel; hint.className = 'hint ok'; }
+
+  } else {
+    if (txt)  txt.textContent = code + ' \u2014 ' + cleanLabel;
+    if (hint) { hint.textContent = '\u2714 ' + cleanLabel; hint.className = 'hint ok'; }
+  }
+  ssClose();
+  saveDraft();
+}
+
+function fillCascadeFromCode(code, desigLabel) {
+  var matches = [];
+  Object.keys(RUB_LABEL_CODES).forEach(function(k) {
+    if (RUB_LABEL_CODES[k].indexOf(code) !== -1) {
+      var p=k.split('|||'), rub=p[0], lbl=p[1], cat='';
+      Object.keys(CAT_RUBS).forEach(function(c){if(CAT_RUBS[c].indexOf(rub)!==-1) cat=c;});
+      matches.push({rub:rub, desig:lbl, cat:cat});
+    }
+  });
+  if (!matches.length) return;
+  var curCat = ge('dom-cat')?ge('dom-cat').value:'';
+  var best = matches[0];
+  if (curCat) matches.forEach(function(m){if(m.cat===curCat) best=m;});
+  var fRub=best.rub, fDesig=desigLabel||best.desig, fCat=best.cat;
+  var dv=ge('desig-val'); if(dv){dv.value=fDesig;ssState['desig']={code:fDesig,label:fDesig};
+    var db=ge('ss-desig-btn');if(db){db.classList.add('filled');var dt=db.querySelector('.ss-txt');if(dt)dt.textContent=fDesig;}
+    var dh=ge('ss-desig-hint');if(dh){dh.textContent='\u2714 '+fDesig;dh.className='hint ok';}}
+  var rv=ge('rub-val'); if(rv){rv.value=fRub;ssState['rub']={code:fRub,label:fRub};
+    var rb=ge('ss-rub-btn');if(rb){rb.classList.add('filled');var rt=rb.querySelector('.ss-txt');if(rt)rt.textContent=fRub;}
+    var rh=ge('ss-rub-hint');if(rh){rh.textContent='\u2714 '+fRub;rh.className='hint ok';}}
+  if (fCat && !curCat) {
+    var ci=ge('dom-cat');if(ci)ci.value=fCat;
+    document.querySelectorAll('.cat-btn').forEach(function(b){
+      b.classList.toggle('active',b.getAttribute('data-cat')===fCat);
+    });
+    var ch=ge('cat-hint');if(ch){ch.textContent='\u2714 '+fCat;ch.className='hint ok';}
+  }
+}
+
 
 function ssFilter(key, q) { ssRender(key, q); }
 
@@ -1406,29 +1369,42 @@ function sendStatusMail(d, statut, commentaire, commerce) {
 // ═══════════════════════════════════════════════════════════
 // SÉLECTION CATÉGORIE DOMMAGE
 // ═══════════════════════════════════════════════════════════
+
+function resetCascadeBelow(from) {
+  var levels  = ['rub', 'desig', 'dom'];
+  var start   = (from === 'cat') ? 0 : levels.indexOf(from);
+  if (start < 0) start = 0;
+  var defaults = {
+    rub:   '🔍 Rechercher une rubrique…',
+    desig: '🔍 Rechercher une désignation…',
+    dom:   '🔍 Rechercher par code ou libéllé…'
+  };
+  for (var i = start; i < levels.length; i++) {
+    var k = levels[i];
+    ssState[k] = null;
+    var valEl = ge(k+'-val'); if(valEl){ valEl.value=''; if(valEl.dataset) valEl.dataset.manual=''; }
+    var btnEl = ge('ss-'+k+'-btn');
+    if (btnEl) { btnEl.classList.remove('filled');
+      var t = btnEl.querySelector('.ss-txt');
+      if (t) t.textContent = defaults[k] || '🔍 Rechercher…'; }
+    var hintEl = ge('ss-'+k+'-hint');
+    if (hintEl){ hintEl.textContent=''; hintEl.className='hint'; }
+  }
+  if (from === 'cat' || start === 0) { var rv = ge('rub-val'); if(rv) rv.value=''; }
+}
+
 function selectCat(btn) {
-  document.querySelectorAll('.cat-btn').forEach(function(b){b.classList.remove('active');});
-  if(btn) btn.classList.add('active');
+  document.querySelectorAll('.cat-btn').forEach(function(b){ b.classList.remove('active'); });
+  if (btn) btn.classList.add('active');
   var cat = btn ? btn.getAttribute('data-cat') : '';
   var ci = ge('dom-cat'); if(ci) ci.value = cat;
   var mr = ge('cat-manual-row'); if(mr) mr.classList.remove('show');
   var hint = ge('cat-hint');
-  if(hint){hint.textContent='✔ '+cat;hint.className='hint ok';}
-  // Reset toute la cascade
-  ssState['rub']=null;
-  var rv=ge('rub-val'); if(rv)rv.value='';
-  ssResetDesig();
-  // Activer rubrique
-  var rubBtn=ge('ss-rub-btn');
-  if(rubBtn){
-    rubBtn.disabled=false; rubBtn.classList.remove('filled');
-    var t=rubBtn.querySelector('.ss-txt');
-    if(t)t.textContent='🔍 Sélectionner une rubrique…';
-  }
-  ssRender('rub','');
-  var nb = CAT_RUBS[cat] ? CAT_RUBS[cat].length : 0;
-  toast('✔ '+cat+' — '+nb+' rubrique(s)');
+  if(hint){ hint.textContent = '✔ '+cat; hint.className = 'hint ok'; }
+  resetCascadeBelow('cat');
+  toast('✔ '+cat);
 }
+
 
 function selectCatManual() {
   document.querySelectorAll('.cat-btn:not(.manual)').forEach(function(b){b.classList.remove('active');});
@@ -1449,32 +1425,29 @@ function selectCatManual() {
 
 function catManualConfirm() {
   var mi = ge('cat-manual-inp');
-  if(!mi || !mi.value.trim()) { toast('Saisissez une catégorie.'); return; }
+  if(!mi || !mi.value.trim()){ toast('Saisissez une catégorie.'); return; }
   var cat = mi.value.trim();
   var ci = ge('dom-cat'); if(ci) ci.value = cat;
   var hint = ge('cat-hint');
-  if(hint) { hint.textContent = '\u2714 Catégorie libre: '+cat; hint.className = 'hint ok'; }
+  if(hint){ hint.textContent = '✔ Catégorie libre: '+cat; hint.className = 'hint ok'; }
   var mr = ge('cat-manual-row'); if(mr) mr.classList.remove('show');
-  // Marquer le bouton "Saisie libre" comme actif
-  document.querySelectorAll('.cat-btn').forEach(function(b) { b.classList.remove('active'); });
+  document.querySelectorAll('.cat-btn').forEach(function(b){ b.classList.remove('active'); });
   var manBtn = document.querySelector('.cat-btn.manual'); if(manBtn) manBtn.classList.add('active');
-  toast('\u2714 Catégorie "'+cat+'" définie');
+  resetCascadeBelow('cat');
+  toast('✔ Catégorie "'+cat+'" définie');
 }
 
+
+
 function resetCat() {
-  document.querySelectorAll('.cat-btn').forEach(function(b){b.classList.remove('active');});
-  var ci=ge('dom-cat'); if(ci)ci.value='';
-  var mr=ge('cat-manual-row'); if(mr)mr.classList.remove('show');
-  var hint=ge('cat-hint'); if(hint){hint.textContent='';hint.className='hint';}
-  ssState['rub']=null;
-  var rv=ge('rub-val'); if(rv)rv.value='';
-  var rubBtn=ge('ss-rub-btn');
-  if(rubBtn){rubBtn.classList.remove('filled');
-    var t=rubBtn.querySelector('.ss-txt');
-    if(t)t.textContent='🔍 Rechercher une rubrique…';}
-  var rh=ge('ss-rub-hint'); if(rh){rh.textContent='';rh.className='hint';}
-  ssResetDesig();
+  document.querySelectorAll('.cat-btn').forEach(function(b){ b.classList.remove('active'); });
+  var ci = ge('dom-cat'); if(ci) ci.value = '';
+  var mr = ge('cat-manual-row'); if(mr) mr.classList.remove('show');
+  var hint = ge('cat-hint'); if(hint){ hint.textContent=''; hint.className='hint'; }
+  resetCascadeBelow('cat');
 }
+
+
 
 // ═══════════════════════════════════════════════════════════
 // SAISIE MANUELLE CODES DOM/AVA
