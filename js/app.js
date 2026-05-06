@@ -891,7 +891,7 @@ function restoreDraft() {
     var b = JSON.parse(s);
     if (!b.chassis && !b.or_number) return;
     if (!confirm('📋 Un brouillon non envoyé a été trouvé. Restaurer ?')) {
-      (function(){ var _lk=localStorage.getItem('gea_draft_last')||'gea_draft';localStorage.removeItem(_lk);localStorage.removeItem('gea_draft_last');})(); return;
+      (function(){ try{ var _lk=localStorage.getItem('gea_draft_last')||'gea_draft';localStorage.removeItem(_lk);localStorage.removeItem('gea_draft_last'); }catch(e){} })(); return;
     }
     // Restaurer le site uniquement si valide
     if (b.site && SITES.indexOf(b.site) !== -1 && G.role === 'team') {
@@ -913,19 +913,19 @@ function restoreDraft() {
     if (b.dom_rub) {
       var rv=ge('rub-val'); if(rv)rv.value=b.dom_rub;
       ssState['rub']={code:b.dom_rub,label:b.dom_rub};
-      var rb=ge('ss-rub-btn'); if(rb){rb.disabled=false;rb.classList.add('filled');
+      var rb=ge('ss-rub-btn'); if(rb){rb.classList.add('filled');
         var rt=rb.querySelector('.ss-txt');if(rt)rt.textContent=b.dom_rub;}
     }
     if (b.desig_piece) {
       var dv=ge('desig-val'); if(dv)dv.value=b.desig_piece;
       ssState['desig']={code:b.desig_piece,label:b.desig_piece};
-      var db=ge('ss-desig-btn'); if(db){db.disabled=false;db.classList.add('filled');
+      var db=ge('ss-desig-btn'); if(db){db.classList.add('filled');
         var dbt=db.querySelector('.ss-txt');if(dbt)dbt.textContent=b.desig_piece;}
     }
     if (b.dom_code) {
       var dv2=ge('dom-val'); if(dv2)dv2.value=b.dom_code;
       ssState['dom']={code:b.dom_code,label:b.dom_lbl||b.dom_code};
-      var dm=ge('ss-dom-btn'); if(dm){dm.disabled=false;dm.classList.add('filled');
+      var dm=ge('ss-dom-btn'); if(dm){dm.classList.add('filled');
         var dmt=dm.querySelector('.ss-txt');if(dmt)dmt.textContent=b.dom_code;}
     }
     // Re-rendre le formulaire KULANZ pour le bon site avant de restaurer
@@ -1101,7 +1101,7 @@ function envoyerFormulaire() {
     };
     if (demandesRef) demandesRef.child('d'+newD.id.replace(/[^a-zA-Z0-9]/g,'')).set(newD).catch(function(e){console.warn('Firebase CCR:',e);});
     else G.demandes.unshift(newD);
-    try { (function(){ var _lk=localStorage.getItem('gea_draft_last')||'gea_draft';localStorage.removeItem(_lk);localStorage.removeItem('gea_draft_last');})(); } catch(e) {}
+    try { (function(){ try{ var _lk=localStorage.getItem('gea_draft_last')||'gea_draft';localStorage.removeItem(_lk);localStorage.removeItem('gea_draft_last'); }catch(e){} })(); } catch(e) {}
     var _ml2  = window._lastMailto  || '';
     var _sbj2 = window._lastSubject || '';
     window._ccrSubject = _sbj2;
@@ -1180,7 +1180,7 @@ function envoyerFormulaire() {
     G.demandes.unshift(newD2); return newD2;
   })
   .then(function(newD2){
-    try { (function(){ var _lk=localStorage.getItem('gea_draft_last')||'gea_draft';localStorage.removeItem(_lk);localStorage.removeItem('gea_draft_last');})(); } catch(e) {}
+    try { (function(){ try{ var _lk=localStorage.getItem('gea_draft_last')||'gea_draft';localStorage.removeItem(_lk);localStorage.removeItem('gea_draft_last'); }catch(e){} })(); } catch(e) {}
     ge('success-details').innerHTML =
       '<strong>Site\u00a0:</strong> '+esc(newD2.site)+'<br>'+
       '<strong>Type\u00a0:</strong> '+esc(newD2.type)+'<br>'+
@@ -1206,7 +1206,6 @@ function nouvelleDemande() {
   ge('chassis').className = '';
   ge('or-num').className  = '';
   setType('K');
-  var nok = ge('kulanz-nok-alert'); if(nok){ nok.classList.remove('show'); nok.innerHTML=''; }
   resetCat();
   var _dci=ge('dom-cat'); if(_dci) _dci.value='';
   var kz=ge('kulanz-questions'); if(kz){[].forEach.call(kz.querySelectorAll('input[type=radio]'),function(r){r.checked=false;});}
@@ -1563,7 +1562,7 @@ function validerSP() {
   var doSave = function() {
     if (demandesRef) {
       var key = 'd'+String(d.id).replace(/[^a-zA-Z0-9]/g,'');
-      return demandesRef.child(key).update(update);
+      return demandesRef.child(key).update(update).catch(function(e){console.warn('Firebase update:',e);});
     } else {
       var idx = G.demandes.findIndex(function(x) { return x.id == G.activeId; });
       if (idx !== -1) Object.assign(G.demandes[idx], update);
@@ -2006,7 +2005,7 @@ function checkKulanzNok() {
   questions.forEach(function(q) {
     if (!q.nok) return;
     var val = gr(q.name);
-    if (q.nok && val === q.nok) {
+    if (q.nok && val === q.nok && val !== 'NC') {
       reasons.push(q.info || q.label);
     }
   });
