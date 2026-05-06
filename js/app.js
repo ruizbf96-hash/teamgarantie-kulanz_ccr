@@ -1067,13 +1067,30 @@ function envoyerFormulaire() {
   if (isCCR) {
     btn.disabled = true; btn.textContent = 'Pr\u00e9paration\u2026';
     try { genererPDF(); } catch(e) { console.warn('PDF:', e); }
-    var corps = '\u2550'.repeat(40)+'\nDEMANDE CCR \u2014 '+site+'\n'+'\u2550'.repeat(40)+'\n\n';
-    d.fields.filter(function(f){ return f.v; }).forEach(function(f){ corps += f.l+' : '+f.v+'\n'; });
-    corps += '\n'+'\u2500'.repeat(40)+'\n\u2500'.repeat(40)+'\n\u26a0 ÉTAPES REQUISES :\n'+'  1. Téléchargez le PDF généré automatiquement (bouton ci-dessus).\n'+'  2. Joignez le formulaire \'Demande CCR\' (PDF) au mail Outlook.\n'+'  3. Joignez les documents justificatifs (factures, photos, plan entretien...).\n'+'  4. Envoyez depuis Outlook.\n'+'\nTeam Garantie GEA – VW';
+    // Corps mail: texte ASCII pur (pas de caracteres speciaux) pour eviter surcharge URL
+    var corps = 'DEMANDE CCR - ' + site + '\n';
+    corps += 'N OR: ' + gv('or_number') + '  |  Chassis: ' + gv('chassis') + '\n';
+    corps += 'Technicien: ' + gv('technicien') + '  |  Email: ' + gv('email_usager') + '\n';
+    corps += 'KVPS: ' + (gv('kvps')||'') + '  |  Date OR: ' + (gv('date_or')||'') + '\n';
+    corps += 'Kilometrage: ' + (gv('kilometrage')||'') + '\n\n';
+    corps += 'PLAINTE CLIENT:\n' + (gv('plainte_client')||'') + '\n\n';
+    corps += 'NATURE DOMMAGE:\n';
+    corps += 'Categorie: ' + (ge('dom-cat')?ge('dom-cat').value:'') + '\n';
+    corps += 'Rubrique: ' + (ge('rub-val')?ge('rub-val').value:'') + '\n';
+    corps += 'Designation: ' + (ge('desig-val')?ge('desig-val').value:'') + '\n';
+    corps += 'Code dommage: ' + (ge('dom-val')?ge('dom-val').value:'') + '\n';
+    corps += 'Code avarie: ' + (ge('ava-val')?ge('ava-val').value:'') + '\n';
+    corps += 'Emplacement: ' + (gv('emplacement')||'') + '\n\n';
+    corps += '--- ETAPES ---\n';
+    corps += '1. Joindre le PDF Demande CCR\n';
+    corps += '2. Joindre les documents justificatifs\n';
+    corps += '3. Envoyer depuis Outlook\n';
+    corps += '\nTeam Garantie GEA - VW';
     var kvps2   = gv('kvps') || site;
-    var subject = 'Demande CCR - '+kvps2+' - '+site+' - '+gv('chassis')+' - '+gv('technicien');
-    var corpsLimite = corps.length > 1800
-      ? corps.substring(0, 1800) + '\n\n[...] CORPS TRONQUÉ — Joindre le PDF pour les détails complets.'
+    var subject = 'Demande CCR - ' + kvps2 + ' - ' + site + ' - ' + gv('chassis') + ' - ' + gv('technicien');
+    // Limiter a 1000 chars pour garantir compatibilite tous clients mail
+    var corpsLimite = corps.length > 1000
+      ? corps.substring(0, 1000) + '\n[Voir PDF pour details complets]'
       : corps;
     var mailto  = 'mailto:teamgarantie@geauto.fr'
                 + '?subject=' + encodeURIComponent(subject)
