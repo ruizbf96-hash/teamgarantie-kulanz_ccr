@@ -1,19 +1,3 @@
-// Polyfill Element.closest() pour Edge/IE
-if (!Element.prototype.closest) {
-  Element.prototype.closest = function(s) {
-    var el = this;
-    do {
-      if (el.matches ? el.matches(s) : el.msMatchesSelector(s)) return el;
-      el = el.parentElement || el.parentNode;
-    } while (el !== null && el.nodeType === 1);
-    return null;
-  };
-}
-if (!Element.prototype.matches) {
-  Element.prototype.matches = Element.prototype.msMatchesSelector ||
-                               Element.prototype.webkitMatchesSelector;
-}
-
 'use strict';
 
 var SITES     = ['Audi Hœnheim','Audi Obernai','SEAT Hœnheim','SEAT Illkirch','SKODA Hœnheim','SKODA Obernai','VW Bischheim','VW Illkirch','VW Obernai'];
@@ -219,8 +203,7 @@ function toast(msg) {
 function isValidVIN(v) {
   if (!v || v.length !== 17) return false;
   if (!/^[A-HJ-NPR-Z0-9]{17}$/i.test(v)) return false;
-  // Vérification: pas 17 fois le même caractère (ex: ZZZZZZZZZZZZZZZZZ)
-  if (/^(.)+$/.test(v)) return false;
+  if (/^(.)\1{16}$/.test(v)) return false;
   return true;
 }
 function vinHint(v) {
@@ -894,8 +877,16 @@ function restoreDraft() {
     if (!s) return;
     var b = JSON.parse(s);
     if (!b.chassis && !b.or_number) return;
-    if (!confirm('📋 Un brouillon non envoyé a été trouvé. Restaurer ?')) {
-      (function(){ try{ var _lk=localStorage.getItem('gea_draft_last')||'gea_draft';localStorage.removeItem(_lk);localStorage.removeItem('gea_draft_last'); }catch(e){} })(); return;
+    var _choix = confirm(
+      '📋 Brouillon trouvé\n\n'
+      + 'Site : '+(b.site||'?')+'  |  N° OR : '+(b.or_number||'?')+'\n'
+      + 'Châssis : '+(b.chassis||'?')+'\n\n'
+      + 'OK      → Restaurer le brouillon\n'
+      + 'Annuler → Vider et repartir à zéro'
+    );
+    if (!_choix) {
+      (function(){ try{ var _lk=localStorage.getItem('gea_draft_last')||'gea_draft';localStorage.removeItem(_lk);localStorage.removeItem('gea_draft_last'); }catch(e){} })();
+      return;
     }
     // Restaurer le site uniquement si valide
     if (b.site && SITES.indexOf(b.site) !== -1 && G.role === 'team') {
@@ -1080,6 +1071,7 @@ function envoyerFormulaire() {
     corps += '\nTeam Garantie GEA - VW';
     var kvps2   = gv('kvps') || site;
     var subject = 'Demande CCR - ' + kvps2 + ' - ' + site + ' - ' + gv('chassis') + ' - ' + gv('technicien');
+    window._lastSubject = subject; // Stocké pour copierObjetMail()
     // Limiter a 1000 chars pour garantir compatibilite tous clients mail
     var corpsLimite = corps.length > 1000
       ? corps.substring(0, 1000) + '\n[Voir PDF pour details complets]'
@@ -1144,8 +1136,15 @@ function envoyerFormulaire() {
       +'</div></details>'
       +'<br><br><div style="background:#f5f5f5;border:1px solid #ccc;border-radius:4px;padding:8px;font-size:11px">'
       +'<strong>\u00c0 :</strong> teamgarantie@geauto.fr<br>'
-      +'<strong>Objet :</strong> '+esc(_sbj2)
-      +'<button type="button" onclick="copierObjetMail()" style="margin-left:8px;padding:3px 10px;font-size:11px;background:#ddd;border:1px solid #bbb;border-radius:3px;cursor:pointer">\ud83d\udccb Copier</button></div>'
+      +'<strong>Objet :</strong><br>'
+      +'<input type="text" readonly onclick="this.select()" '
+      +'value="'+esc(_sbj2)+'" '
+      +'style="width:100%;margin-top:4px;padding:6px 8px;font-size:11px;'
+      +'font-family:monospace;border:1px solid #ccc;border-radius:4px;'
+      +'background:#fff;cursor:text;box-sizing:border-box" '
+      +'title="Cliquez pour s\u00e9lectionner, puis Ctrl+C pour copier">'
+      +'<span style="font-size:10px;color:#888;display:block;margin-top:2px">'
+      +'\u261d\ufe0f Cliquez sur le champ puis Ctrl+C pour copier</span></div>'
       +'<br>\ud83d\udcce <strong>3.</strong> Joindre le <strong>PDF</strong> + documents justificatifs'
       +'<br>\ud83d\udce4 <strong>4.</strong> Envoyer depuis Outlook</div>';
     ge('success-overlay').classList.add('open');
