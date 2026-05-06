@@ -805,8 +805,12 @@ function saveKulanz() {
 }
 
 function copyKulanz() {
+  saveKulanz(); // S'assurer que les données sont à jour
   var k = G.kulanzData;
-  if (!k.chassis && !k.or_number) { alert('⚠ Aucune donnée Kulanz trouvée.'); return; }
+  if (!k || (!k.chassis && !k.or_number && !k.plainte_client)) {
+    alert('⚠ Aucune donnée Kulanz à copier. Remplissez d’abord le formulaire.');
+    return;
+  }
   ['chassis','kilometrage','or_number','date_or','kvps','technicien','email_usager',
    'plainte_client','emplacement','ref_piece'].forEach(function(n) { if(k[n]) sv(n,k[n]); });
   if (k.site) {
@@ -1112,13 +1116,7 @@ function envoyerFormulaire() {
       +'<div style="background:#fff8e1;border:2px solid #f39c12;border-radius:8px;padding:14px;margin-top:10px">'
       +'<div style="font-weight:700;color:#c0392b;margin-bottom:10px">\u26a0\ufe0f ACTIONS OBLIGATOIRES :</div>'
       +'\u2705 <strong>1.</strong> PDF g\u00e9n\u00e9r\u00e9 \u2014 sauvegardez-le<br><br>'
-      +'\u2709\ufe0f <strong>2.</strong> '
-      +'<button type="button" onclick="ouvrirOutlookCCR()" '
-      +'style="background:#0078d4;color:#fff;border:none;border-radius:6px;'
-      +'padding:8px 16px;font-size:13px;font-weight:700;cursor:pointer">'
-      +'\ud83d\udce7 Ouvrir Outlook</button>'
-      +'<br><span style="font-size:11px;color:#888;margin-top:4px;display:block">'
-      +'Si le bouton ne fonctionne pas \u2192 Outlook n\'est pas configur\u00e9 comme client mail par d\u00e9faut.</span>'
+      +'\u2709\ufe0f <strong>2.</strong> Ouvrez Outlook et cr\u00e9ez un nouveau mail avec les informations ci-dessous :'
       +'<details style="margin-top:6px;font-size:11px">'
       +'<summary style="cursor:pointer;color:#0078d4;font-weight:700">'
       +'\u2699\ufe0f Configurer Outlook comme client par d\u00e9faut</summary>'
