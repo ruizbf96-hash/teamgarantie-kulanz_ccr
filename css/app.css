@@ -2,7 +2,7 @@
 /* ── VARIABLES ── */
 :root{
   --bg:#f5f3ee;--card:#fff;--dark:#1a1a2e;--gold:#b8973a;--gold2:#d4ae52;
-  --silver:#c8c8d4;--cream:#f5f3ee;--red:#c0392b;--green:#27ae60;--orange:#e67e22;
+  --silver:#c8c8d4;--red:#c0392b;--green:#27ae60;--orange:#e67e22;
   --shadow:0 4px 24px rgba(0,0,0,.08);--r:10px;
   --font-body:'DM Sans',sans-serif;--font-title:'Cormorant Garamond',serif;
 }
