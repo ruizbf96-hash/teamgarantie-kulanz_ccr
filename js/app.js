@@ -1049,18 +1049,10 @@ function envoyerFormulaire() {
 
   var btn = ge('btn-envoyer');
   if (!btn || btn.disabled) return;
-  var confirmMsg = isCCR
-    ? "\u26a0\ufe0f AVANT D'ENVOYER \u2014 Demande CCR\n\n"
-      + "Site : "+site+"\nN\u00b0 OR : "+gv('or_number')+"\nCh\u00e2ssis : "+gv('chassis')+"\n\n"
-      + "\u25b6 \u00c9TAPES OBLIGATOIRES :\n"
-      + "  1. Cliquez OK \u2192 le PDF se g\u00e9n\u00e8re automatiquement\n"
-      + "  2. Sauvegardez le PDF sur votre poste\n"
-      + "  3. Outlook va s'ouvrir avec l'objet pr\u00e9-rempli\n"
-      + "  4. Joignez le PDF + tous les documents justificatifs\n"
-      + "  5. Envoyez depuis Outlook\n\n"
-      + "Confirmer et g\u00e9n\u00e9rer le PDF ?"
-    : "Confirmer l'envoi ?\n\nSite\u00a0: "+site+"\nN\u00b0 OR\u00a0: "+gv('or_number')+"\nCh\u00e2ssis\u00a0: "+gv('chassis');
-  if (!confirm(confirmMsg)) return;
+  var _ct = 'Confirmer l\'envoi ?'
+    + '\nSite : '+site+'  |  N° OR : '+gv('or_number')+'  |  Châssis : '+gv('chassis');
+  if (isCCR) _ct += '\n\n⚠ Après OK : le PDF est généré et les instructions s\'affichent.';
+  if (!confirm(_ct)) return;
 
   var d = collectData();
 
