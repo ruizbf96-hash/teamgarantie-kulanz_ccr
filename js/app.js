@@ -1,3 +1,19 @@
+// Polyfill Element.closest() pour Edge/IE
+if (!Element.prototype.closest) {
+  Element.prototype.closest = function(s) {
+    var el = this;
+    do {
+      if (el.matches ? el.matches(s) : el.msMatchesSelector(s)) return el;
+      el = el.parentElement || el.parentNode;
+    } while (el !== null && el.nodeType === 1);
+    return null;
+  };
+}
+if (!Element.prototype.matches) {
+  Element.prototype.matches = Element.prototype.msMatchesSelector ||
+                               Element.prototype.webkitMatchesSelector;
+}
+
 'use strict';
 
 var SITES     = ['Audi Hœnheim','Audi Obernai','SEAT Hœnheim','SEAT Illkirch','SKODA Hœnheim','SKODA Obernai','VW Bischheim','VW Illkirch','VW Obernai'];
@@ -43,7 +59,17 @@ var KULANZ_BY_BRAND = {
     {name:'vendu_client',    label:"Si non, est-il vendu au client et réalisé en même temps que la réparation ?", nok:null},
     {name:'lien_entretien',  label:"Un lien peut être établi entre la cause du dommage et l'entretien ?", nok:'OUI', info:"Lien dommage/entretien détecté"}
   ],
-  'SEAT': KULANZ_BY_BRAND['VW'],
+  'SEAT': [
+    {name:'tpi',             label:"Y a-t-il une TPI ?",                                              nok:null, info:"TPI manquante"},
+    {name:'opteven',         label:"Garantie OPTEVEN visible dans ELSA ?",                            nok:null},
+    {name:'tuning',          label:"Code tuning dans SAGA ?",                                         nok:'OUI', info:"Code tuning détecté → NOK"},
+    {name:'piece_usure',     label:"La pièce concernée est une pièce d'usure ?",       nok:'OUI', info:"Pièce d'usure non couverte"},
+    {name:'piece_entretien', label:"La pièce concernée est liée à l'entretien ?", nok:null},
+    {name:'preconisations',  label:"Les préconisations constructeur pour les entretiens sont toutes respectées ?", nok:'NON', info:"Préconisations non respectées"},
+    {name:'dernier_entretien',label:"Le dernier entretien est-il présent ?",                     nok:'NON', info:"Dernier entretien manquant"},
+    {name:'vendu_client',    label:"Si non, est-il vendu au client et réalisé en même temps que la réparation ?", nok:null},
+    {name:'lien_entretien',  label:"Un lien peut être établi entre la cause du dommage et l'entretien ?", nok:'OUI', info:"Lien dommage/entretien détecté"}
+  ],
   'SKODA': [
     {name:'tpi',             label:"Y a-t-il une TPI ?",                                              nok:null, info:"TPI manquante"},
     {name:'opteven',         label:"Garantie OPTEVEN visible dans ELSA ?",                            nok:null},
@@ -193,7 +219,8 @@ function toast(msg) {
 function isValidVIN(v) {
   if (!v || v.length !== 17) return false;
   if (!/^[A-HJ-NPR-Z0-9]{17}$/i.test(v)) return false;
-  if (/^(.)\1{16}$/.test(v)) return false;
+  // Vérification: pas 17 fois le même caractère (ex: ZZZZZZZZZZZZZZZZZ)
+  if (/^(.)+$/.test(v)) return false;
   return true;
 }
 function vinHint(v) {
@@ -992,32 +1019,6 @@ function collectData() {
 // \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
 // ENVOYER
 // \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
-function buildDemande(d, email, type) {
-  var _key = (demandesRef && demandesRef.push) ? (demandesRef.push().key || null) : null;
-  return {
-    id:               _key || (Date.now()+'_'+Math.random().toString(36).slice(2,9)),
-    site:             d.site,
-    type:             type || d.type || 'Kulanz',
-    or:               gv('or_number'),
-    chassis:          gv('chassis'),
-    code_dommage:     d.domFull || '',
-    desig_piece:      ge('desig-val') ? ge('desig-val').value : '',
-    rubrique:         ge('rub-val')   ? ge('rub-val').value   : '',
-    categorie:        ge('dom-cat')   ? ge('dom-cat').value   : '',
-    code_avarie:      d.avaFull || '',
-    plainte:          gv('plainte_client'),
-    kilometrage:      gv('kilometrage'),
-    date_or:          gv('date_or'),
-    kvps:             gv('kvps'),
-    email_usager:     email,
-    technicien:       gv('technicien'),
-    date:             new Date().toLocaleDateString('fr-FR'),
-    statut:           'En attente',
-    commentaire_team: '',
-    commerce:         null
-  };
-}
-
 function envoyerFormulaire() {
   var site  = ge('f-site') ? ge('f-site').value : '';
   var type  = (ge('f-type') && ge('f-type').value) ? ge('f-type').value : 'Kulanz';
@@ -1087,7 +1088,7 @@ function envoyerFormulaire() {
       window.location.href = mailto;
     }
     var newD = {
-      id: (demandesRef.push().key || (Date.now()+'_'+Math.random().toString(36).slice(2,9))),
+      id: Date.now()+'_'+Math.random().toString(36).slice(2,5),
       date: new Date().toLocaleDateString('fr-FR'),
       site: d.site, type: 'CCR',
       or: gv('or_number'), chassis: gv('chassis'), code_dommage: d.domFull,
@@ -1164,7 +1165,7 @@ function envoyerFormulaire() {
   .then(function(res){
     if (!res.success) throw new Error('web3forms error');
     var newD2 = {
-      id: (demandesRef.push().key || (Date.now()+'_'+Math.random().toString(36).slice(2,9))),
+      id: Date.now()+'_'+Math.random().toString(36).slice(2,5),
       date: new Date().toLocaleDateString('fr-FR'),
       site: d.site, type: d.type, or: gv('or_number'), chassis: gv('chassis'),
       code_dommage: d.domFull,
