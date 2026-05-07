@@ -2029,7 +2029,10 @@ function checkKulanzNok() {
   else if (brandKey.indexOf('seat') >= 0) brandKey = 'seat';
   else brandKey = 'vw';
 
-  var reasonsHtml = reasons.map(function(r) { return '<p>' + esc(r) + '</p>'; }).join('');
+  var tuningVal = gr('tuning');
+  var tuningNok = (tuningVal === 'OUI');
+
+  var reasonsHtml = reasons.map(function(r) { return '<p>▪️ ' + esc(r) + '</p>'; }).join('');
   var brandHtml = '';
   if (BRAND_TEXTS && BRAND_TEXTS[brandKey]) {
     var b = BRAND_TEXTS[brandKey];
@@ -2039,17 +2042,31 @@ function checkKulanzNok() {
       + '</div>';
   }
 
+  var tuningBlock = '';
+  if (tuningNok) {
+    tuningBlock = '<div style="background:#fdf0f0;border:2px solid #c0392b;border-radius:8px;padding:12px 14px;margin-bottom:12px">'
+      + '<div style="font-weight:700;color:#c0392b;font-size:13px;margin-bottom:6px">������Code tuning détecté — KULANZ IMPOSSIBLE</div>'
+      + '<p style="margin:0 0 6px;font-size:12px">Un <strong>code tuning</strong> est présent dans SAGA. '
+      + 'Le constructeur n’accorde aucune participation commerciale sur un véhicule avec code tuning actif.</p>'
+      + '</div>';
+  }
+
+  var bodyContent = tuningNok
+    ? tuningBlock
+    : tuningBlock
+      + '<p>L\'application des participations commerciales nécessite le contrôle de tous les services et entretiens conformément aux préconisations du constructeur.</p>'
+      + '<p>Une participation commerciale peut être accordée avec un historique de service incomplet s\'il n\'y a pas de lien de causalité possible entre la réclamation client et le service manquant ou réalisé en retard.</p>'
+      + '<p><mark>Si un entretien est <strong>"à faire"</strong> au moment de la réclamation</mark>, la participation commerciale ne peut être proposée qu\'après l\'achèvement préalable de l\'entretien.</p>';
+
   zone.innerHTML = '<div class="knok-box">'
     + '<div class="knok-title">⚠ Kulanz non applicable dans l\'état actuel</div>'
     + '<div class="knok-body">'
-    + '<p>L\'application des participations commerciales nécessite le contrôle de tous les services et entretiens conformément aux préconisations du constructeur.</p>'
-    + '<p>Une participation commerciale peut être accordée avec un historique de service incomplet s\'il n\'y a pas de lien de causalité possible entre la réclamation client et le service manquant ou réalisé en retard.</p>'
-    + '<p><mark>Si un entretien est <strong>"à faire"</strong> au moment de la réclamation</mark>, la participation commerciale ne peut être proposée qu\'après l\'achèvement préalable de l\'entretien.</p>'
+    + bodyContent
     + '<div style="margin-top:10px;padding-top:10px;border-top:1px solid rgba(230,126,34,.3)">'
     + '<strong style="font-size:11px;color:#c0392b">Motif(s) de non-éligibilité :</strong>'
     + '<div style="margin-top:6px">' + reasonsHtml + '</div>'
     + '</div>'
-    + brandHtml
+    + (tuningNok ? '' : brandHtml)
     + '</div></div>';
 
   zone.classList.add('show');
