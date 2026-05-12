@@ -2072,3 +2072,53 @@ function checkKulanzNok() {
   zone.classList.add('show');
 }
 
+// ═══════════════════════════════════════════════════════
+// AUTO-HIDE HEADER au scroll
+// ═══════════════════════════════════════════════════════
+(function() {
+  var lastY    = 0;
+  var header   = null;
+  var ticking  = false;
+  var THRESHOLD = 60; // pixels à scroller avant de cacher
+
+  function onScroll() {
+    if (!ticking) {
+      window.requestAnimationFrame(function() {
+        header = header || document.querySelector('header');
+        if (!header) { ticking = false; return; }
+        var y = window.pageYOffset || document.documentElement.scrollTop;
+        if (y > lastY && y > THRESHOLD) {
+          // Scroll vers le bas → cacher
+          header.classList.add('header-hidden');
+        } else {
+          // Scroll vers le haut ou en haut → montrer
+          header.classList.remove('header-hidden');
+        }
+        lastY = y <= 0 ? 0 : y;
+        ticking = false;
+      });
+      ticking = true;
+    }
+  }
+
+  // Activer seulement sur la page formulaire (pas login)
+  function initScrollHide() {
+    window.addEventListener('scroll', onScroll, { passive: true });
+  }
+
+  // Cliquer sur le bas du header caché le fait réapparaître
+  document.addEventListener('click', function(e) {
+    var h = document.querySelector('header');
+    if (h && h.classList.contains('header-hidden')) {
+      h.classList.remove('header-hidden');
+    }
+  });
+
+  // Lancer après le login
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initScrollHide);
+  } else {
+    initScrollHide();
+  }
+})();
+
