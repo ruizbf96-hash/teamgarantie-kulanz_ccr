@@ -1316,6 +1316,7 @@ function renderHisto() {
     return (!fS||d.site===fS) && (!fT||d.type===fT) && (!fSt||d.statut===fSt);
   });
 
+  var _bv=ge('btn-vider-histo'); if(_bv) _bv.style.display=(G.role==='team'?'':'none');
   var tbody = ge('histo-body');
   var empty = ge('histo-empty');
   if (!tbody) return;
@@ -1358,7 +1359,7 @@ function renderHisto() {
 }
 
 function viderHistorique() {
-  // Ouvrir le modal en 2 étapes
+  if (G.role !== 'team') { toast('⚠ Réservé à TeamGarantie.'); return; }
   var m = ge('vider-modal');
   if (!m) return;
   // Reset à l'étape 1
@@ -1367,6 +1368,12 @@ function viderHistorique() {
   var pe = ge('vider-pwd-err'); if(pe) pe.style.display = 'none';
   var pi = ge('vider-pwd'); if(pi) pi.value = '';
   var ob = ge('vider-ok-btn'); if(ob) ob.disabled = false;
+  var _sl=ge('vm-site-label');
+  if(_sl){
+    var _fs2=ge('f-site')?ge('f-site').value:'';
+    _sl.textContent=_fs2?'Site concerné : '+_fs2:'⚠ Sélectionnez un site';
+    _sl.style.color=_fs2?'var(--gold)':'#c0392b';
+  }
   m.classList.add('open');
 }
 
@@ -1396,13 +1403,16 @@ function viderConfirm() {
   if(ob) ob.disabled = true;
   var pe = ge('vider-pwd-err'); if(pe) pe.style.display = 'none';
   if (demandesRef) {
-    demandesRef.remove()
-      .then(function() {
-        G.demandes = [];
-        closeViderModal();
-        renderHisto();
-        renderDash();
-        toast('🗑 Historique supprimé définitivement.');
+    var _fs=ge('f-site')?ge('f-site').value:'';
+    if(!_fs){toast('⚠ Sélectionnez un site à vider.');closeViderModal();return;}
+    var _td=G.demandes.filter(function(d){return d.site===_fs;});
+    if(!_td.length){toast('✔ Aucune demande pour '+_fs+'.');closeViderModal();return;}
+    Promise.all(_td.map(function(d){
+      return demandesRef.child('d'+String(d.id).replace(/[^a-zA-Z0-9]/g,'')).remove();
+    })).then(function(){
+      G.demandes=G.demandes.filter(function(d){return d.site!==_fs;});
+      closeViderModal();renderHisto();renderDash();
+      toast('✔ '+_td.length+' demande(s) de '+_fs+' supprimée(s).');
       })
       .catch(function() {
         closeViderModal();
