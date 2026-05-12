@@ -2051,12 +2051,12 @@ function checkKulanzNok() {
       + '</div>';
   }
 
-  var bodyContent = tuningNok
-    ? tuningBlock
-    : tuningBlock
-      + '<p>L\'application des participations commerciales nécessite le contrôle de tous les services et entretiens conformément aux préconisations du constructeur.</p>'
-      + '<p>Une participation commerciale peut être accordée avec un historique de service incomplet s\'il n\'y a pas de lien de causalité possible entre la réclamation client et le service manquant ou réalisé en retard.</p>'
-      + '<p><mark>Si un entretien est <strong>"à faire"</strong> au moment de la réclamation</mark>, la participation commerciale ne peut être proposée qu\'après l\'achèvement préalable de l\'entretien.</p>';
+  // tuningBlock affiché en tête dans tous les cas si tuning NOK
+  // + texte générique et règles marque toujours présents
+  var bodyContent = tuningBlock
+    + '<p>L\'application des participations commerciales nécessite le contrôle de tous les services et entretiens conformément aux préconisations du constructeur.</p>'
+    + '<p>Une participation commerciale peut être accordée avec un historique de service incomplet s\'il n\'y a pas de lien de causalité possible entre la réclamation client et le service manquant ou réalisé en retard.</p>'
+    + '<p><mark>Si un entretien est <strong>"à faire"</strong> au moment de la réclamation</mark>, la participation commerciale ne peut être proposée qu\'après l\'achèvement préalable de l\'entretien.</p>';
 
   zone.innerHTML = '<div class="knok-box">'
     + '<div class="knok-title">⚠ Kulanz non applicable dans l\'état actuel</div>'
@@ -2066,7 +2066,7 @@ function checkKulanzNok() {
     + '<strong style="font-size:11px;color:#c0392b">Motif(s) de non-éligibilité :</strong>'
     + '<div style="margin-top:6px">' + reasonsHtml + '</div>'
     + '</div>'
-    + (tuningNok ? '' : brandHtml)
+    + brandHtml
     + '</div></div>';
 
   zone.classList.add('show');
