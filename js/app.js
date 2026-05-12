@@ -2063,10 +2063,44 @@ function checkKulanzNok() {
 
   // tuningBlock affiché en tête dans tous les cas si tuning NOK
   // + texte générique et règles marque toujours présents
-  var bodyContent = tuningBlock
-    + '<p>L\'application des participations commerciales nécessite le contrôle de tous les services et entretiens conformément aux préconisations du constructeur.</p>'
-    + '<p>Une participation commerciale peut être accordée avec un historique de service incomplet s\'il n\'y a pas de lien de causalité possible entre la réclamation client et le service manquant ou réalisé en retard.</p>'
-    + '<p><mark>Si un entretien est <strong>"à faire"</strong> au moment de la réclamation</mark>, la participation commerciale ne peut être proposée qu\'après l\'achèvement préalable de l\'entretien.</p>';
+  // Messages contextuels: chaque NOK → son bloc spécifique
+  var _blocks = '';
+
+  // Tuning
+  if (tuningNok) _blocks += tuningBlock;
+
+  // Pièce d'usure
+  if (gr('piece_usure') === 'OUI') {
+    _blocks += '<div style="background:#fef9e7;border:2px solid #f39c12;border-radius:8px;padding:12px 14px;margin-bottom:10px">'
+      + '<div style="font-weight:700;color:#d68910;font-size:13px;margin-bottom:5px">⚠️ Pièce d’usure — Non couverte</div>'
+      + '<p style="margin:0;font-size:12px">Les <strong>pièces d’usure</strong> (filtres, plaquettes, balais, ampoules…) sont exclues des participations constructeur. Elles relèvent de l’entretien normal du véhicule.</p>'
+      + '</div>';
+  }
+
+  // Entretien incomplet / non conforme
+  if (gr('preconisations') === 'NON' || gr('dernier_entretien') === 'NON' || gr('dernier_entretien_audi') === 'NON') {
+    _blocks += '<div style="background:#fef9e7;border:2px solid #e67e22;border-radius:8px;padding:12px 14px;margin-bottom:10px">'
+      + '<div style="font-weight:700;color:#ca6f1e;font-size:13px;margin-bottom:5px">📋 Entretien incomplet ou non conforme</div>'
+      + '<p style="margin:0 0 5px;font-size:12px">L’application des participations nécessite le contrôle de tous les entretiens conformément aux préconisations constructeur.</p>'
+      + '<p style="margin:0 0 5px;font-size:12px">Une participation peut être accordée si <strong>aucun lien de causalité</strong> n’existe entre la réclamation et le service manquant.</p>'
+      + '<p style="margin:0;font-size:12px;background:rgba(230,126,34,.1);padding:5px 8px;border-radius:4px"><mark>Si un entretien est <strong>« à faire »</strong></mark>, la participation ne peut être proposée qu’après réalisation.</p>'
+      + '</div>';
+  }
+
+  // Lien dommage/entretien
+  if (gr('lien_entretien') === 'OUI') {
+    _blocks += '<div style="background:#fef9e7;border:2px solid #e67e22;border-radius:8px;padding:12px 14px;margin-bottom:10px">'
+      + '<div style="font-weight:700;color:#ca6f1e;font-size:13px;margin-bottom:5px">🔗 Lien dommage / entretien détecté</div>'
+      + '<p style="margin:0;font-size:12px">Un lien de causalité établi entre le dommage et l’entretien rend la demande Kulanz <strong>irrecevable</strong>. Le constructeur considère que le dommage aurait pu être prévenu par un entretien conforme.</p>'
+      + '</div>';
+  }
+
+  // Si aucun bloc spécifique → message générique
+  if (!_blocks) {
+    _blocks = '<p style="font-size:12px">Kulanz non applicable dans l’état actuel des réponses fournies.</p>';
+  }
+
+  var bodyContent = _blocks;
 
   zone.innerHTML = '<div class="knok-box">'
     + '<div class="knok-title">⚠ Kulanz non applicable dans l\'état actuel</div>'
@@ -2097,11 +2131,11 @@ function checkKulanzNok() {
         header = header || document.querySelector('header');
         if (!header) { ticking = false; return; }
         var y = window.pageYOffset || document.documentElement.scrollTop;
-        if (y > lastY && y > THRESHOLD) {
-          // Scroll vers le bas → cacher
+        if (y > THRESHOLD) {
+          // Dès qu'on a scrollé plus de THRESHOLD px → cacher
           header.classList.add('header-hidden');
         } else {
-          // Scroll vers le haut ou en haut → montrer
+          // Seulement au top → montrer
           header.classList.remove('header-hidden');
         }
         lastY = y <= 0 ? 0 : y;
